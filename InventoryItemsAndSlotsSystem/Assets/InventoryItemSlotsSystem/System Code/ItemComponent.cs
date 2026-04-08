@@ -19,8 +19,58 @@ public class ItemComponent : MonoBehaviour
         return maxNumberOfBlocksInAStack;
     }
 
+    public void setMaxNumberOfBlocksInAStack(int value)
+    {
+        maxNumberOfBlocksInAStack = value;
+    }
+
     public float getItemWeight()
     {
         return itemWeight;
+    }
+
+    public void setItemWeight(float value)
+    {
+        itemWeight = value;
+    }
+
+    public Rareness getRareness()
+    {
+        return rareness;
+    }
+
+    public void setRareness(Rareness rareness)
+    {
+        this.rareness = rareness;
+    }
+
+    public string getItemName()
+    {
+        return itemName;
+    }
+
+    public void setItemName(string itemName)
+    {
+        this.itemName = itemName;
+    }
+
+    public ItemType getItemType()
+    {
+        return itemType;
+    }
+
+    public void setItemType(ItemType itemType)
+    {
+        this.itemType = itemType;
+    }
+
+    public Sprite getPicture()
+    {
+        return picture;
+    }
+
+    public void setPicture(Sprite picture)
+    {
+        this.picture = picture;
     }
 }
