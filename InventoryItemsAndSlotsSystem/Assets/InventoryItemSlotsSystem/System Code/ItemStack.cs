@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public class ItemStack
 {
@@ -42,10 +43,12 @@ public class ItemStack
 
 
     //Contructor if all items are signle celled
-    public ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration)
+    public ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration, int cellOccupied)
     {
         this.item = item;
         this.inventoryConfiguration = inventoryConfiguration;
+        cellsOccupied = new List<int>();
+        cellsOccupied.Add(cellOccupied);
     }
 
 
