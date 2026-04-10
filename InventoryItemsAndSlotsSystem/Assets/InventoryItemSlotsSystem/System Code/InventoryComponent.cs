@@ -9,10 +9,10 @@ public class InventoryComponent : MonoBehaviour
     [SerializeField] private int inventoryWidth=10, newInventoryWidth=10;
     [SerializeField] private int inventoryHeight=5, newInventoryHeight=10;
     [Header("How many cells of the inventory is visible in a single view, if height is more than visible height then you will need to scroll an inventory")]
-    [SerializeField] private string inventoryName;
+    [SerializeField] private string inventoryName = null;
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
 
-    private Dictionary<ItemComponent, List<ItemStack>> itemsInTheInventory;
+    private Dictionary<(string, Rareness), List<ItemStack>> itemsInTheInventory;
     private ItemStack[] itemsPositions;
 
 
@@ -71,7 +71,10 @@ public class InventoryComponent : MonoBehaviour
 
     private void Start()
     {
-        itemsInTheInventory = new Dictionary<ItemComponent,List<ItemStack>>();
+        if(inventoryName==null)
+            inventoryName = System.Guid.NewGuid().ToString();
+
+        itemsInTheInventory = new Dictionary<(string, Rareness),List<ItemStack>>();
         itemsPositions = new ItemStack[inventoryWidth*inventoryHeight];
     }
 
@@ -79,52 +82,76 @@ public class InventoryComponent : MonoBehaviour
     //use this to move itemStack from one inventory to other!
     public NewItemPlacementResult PlaceItemStackToInventory(ItemStack itemStack, Vector2Int position)
     {
-        int arrPosition = position.y*inventoryWidth+position.x;
-        NewItemPlacementResult placementResult = new NewItemPlacementResult();
-
-        if(itemsPositions.Length<=arrPosition || arrPosition<0)
+        if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            placementResult.invalidPosition=true;
-            return placementResult;
-        }
+            int arrPosition = position.y*inventoryWidth+position.x;
+            NewItemPlacementResult placementResult = new NewItemPlacementResult();
 
-        if(itemsPositions[arrPosition]!=null)
-        {
-            if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
+            if(itemsPositions.Length<=arrPosition || arrPosition<0)
             {
-                int overflow = itemStack.IncreaseAmountBy(itemsPositions[arrPosition].getNumOfItems());
-                if(overflow>0)
+                placementResult.invalidPosition=true;
+                return placementResult;
+            }
+
+            if(itemsPositions[arrPosition]!=null)
+            {
+                if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
                 {
-                    itemsPositions[arrPosition].DecreaseAmountBy(itemsPositions[arrPosition].getNumOfItems()-overflow);
-                    placementResult.stackReplaced = itemsPositions[arrPosition];
+                    int overflow = itemStack.IncreaseAmountBy(itemsPositions[arrPosition].getNumOfItems());
+                    if(overflow>0)
+                    {
+                        itemsPositions[arrPosition].DecreaseAmountBy(itemsPositions[arrPosition].getNumOfItems()-overflow);
+                        placementResult.stackReplaced = itemsPositions[arrPosition];
+                    }
                 }
+                else
+                {
+                    if(inventoryConfiguration.itemStacksLimit<0)
+                        placementResult.stackReplaced = itemsPositions[arrPosition];
+                    else
+                    {
+                        if(!(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(itemStack.getItem())))
+                            placementResult.stackReplaced = itemsPositions[arrPosition];
+                    }
+                }
+
+                ItemComponent existingItem = itemsPositions[arrPosition].getItem();
+                itemsInTheInventory[(existingItem.getItemName(),existingItem.getRareness())].Remove(itemsPositions[arrPosition]);
+                if(itemsInTheInventory[(existingItem.getItemName(),existingItem.getRareness())].Count==0)
+                    itemsInTheInventory.Remove((existingItem.getItemName(),existingItem.getRareness()));
+            }
+
+
+            if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(itemStack.getItem())))
+            {
+                ItemComponent newItem = itemStack.getItem();
+                if(!itemsInTheInventory.ContainsKey((newItem.getItemName(),newItem.getRareness())))
+                    itemsInTheInventory.Add((newItem.getItemName(),newItem.getRareness()), new List<ItemStack>());
+
+                itemStack.getCellsOccupied()[0]=arrPosition;
+
+                itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
+                itemsPositions[arrPosition] = itemStack;
+
+                return placementResult;
             }
             else
-                placementResult.stackReplaced = itemsPositions[arrPosition];
-
-            itemsInTheInventory[itemsPositions[arrPosition].getItem()].Remove(itemsPositions[arrPosition]);
-            if(itemsInTheInventory[itemsPositions[arrPosition].getItem()].Count==0)
-                itemsInTheInventory.Remove(itemsPositions[arrPosition].getItem());
+            {
+                placementResult.stackCapReached=true;
+                return placementResult;
+            }
         }
 
-        if(!itemsInTheInventory.ContainsKey(itemStack.getItem()))
-            itemsInTheInventory.Add(itemStack.getItem(), new List<ItemStack>());
-
-        itemStack.getCellsOccupied()[0]=arrPosition;
-
-        itemsInTheInventory[itemStack.getItem()].Add(itemStack);
-        itemsPositions[arrPosition] = itemStack;
-
-        return placementResult;
+        return null;
     }
 
 
     //Call it when new item is added to the inventory not by the player
     public int AddItemsToInventory(ItemComponent item, int amount)
     {
-        if(itemsInTheInventory.ContainsKey(item))
+        if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness())))
         {
-            foreach(ItemStack itemStack in itemsInTheInventory[item])
+            foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
             {
                 if(!itemStack.getIsFull())
                 {
@@ -135,20 +162,23 @@ public class InventoryComponent : MonoBehaviour
             }
         }
         else
-            itemsInTheInventory.Add(item, new List<ItemStack>());
+            itemsInTheInventory.Add((item.getItemName(),item.getRareness()), new List<ItemStack>());
 
         for(int i=0; i<itemsPositions.Length; i++)
         {
             if(itemsPositions[i]==null)
             {
-                ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
-                amount = newItemStack.IncreaseAmountBy(amount);
+                if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(item)))
+                {
+                    ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
+                    amount = newItemStack.IncreaseAmountBy(amount);
 
-                itemsPositions[i] = newItemStack;
-                itemsInTheInventory[item].Add(newItemStack);
+                    itemsPositions[i] = newItemStack;
+                    itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
 
-                if(amount<=0)
-                    return 0;
+                    if(amount<=0)
+                        return 0;
+                }
             }
         }
 
@@ -158,28 +188,31 @@ public class InventoryComponent : MonoBehaviour
 
     public bool RemoveItemsFromInventory(ItemComponent item, int amount)
     {
+        //COMPLETE HERE!
         if(amount>GetTotalAmountOfThisItem(item))
             return false;
 
         while(true)
         {
-            amount = itemsInTheInventory[item][0].DecreaseAmountBy(amount);
+            amount = itemsInTheInventory[(item.getItemName(),item.getRareness())][0].DecreaseAmountBy(amount);
 
             if(amount>0)
             {
-                itemsPositions[itemsInTheInventory[item][0].getCellsOccupied()[0]]=null;
-                itemsInTheInventory[item].RemoveAt(0);
+                itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
+                itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
             }
             else
-                return true;
+                break;
         }
+
+        return true;
     }
 
 
     public int GetTotalAmountOfThisItem(ItemComponent item)
     {
         int totalAmount=0;
-        foreach(ItemStack itemStack in itemsInTheInventory[item])
+        foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
         {
             totalAmount+=itemStack.getNumOfItems();
         }
@@ -188,9 +221,21 @@ public class InventoryComponent : MonoBehaviour
     }
 
 
+    public int GetNumberOfStacksOfThisItem(ItemComponent item)
+    {
+        int stacksAmount=0;
+        foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
+        {
+            stacksAmount++;
+        }
+
+        return stacksAmount;
+    }
+
+
     public bool ContainsItem(ItemComponent item)
     {
-        return itemsInTheInventory.ContainsKey(item);
+        return itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness()));
     }
 
 
@@ -202,29 +247,38 @@ public class InventoryComponent : MonoBehaviour
 
     public void RemoveItemStackByPosition(Vector2Int position)
     {
-        ItemStack stackToRemove = itemsPositions[position.y*inventoryWidth+position.x];
-        itemsPositions[position.y*inventoryWidth+position.x]=null;
-        itemsInTheInventory[stackToRemove.getItem()].Remove(stackToRemove);
+        if(inventoryConfiguration.arbitraryStackPlacement)
+        {
+            ItemStack stackToRemove = itemsPositions[position.y*inventoryWidth+position.x];
+            itemsPositions[position.y*inventoryWidth+position.x]=null;
+            itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
 
-        if(itemsInTheInventory[stackToRemove.getItem()].Count==0)
-            itemsInTheInventory.Remove(stackToRemove.getItem());
+            if(itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Count==0)
+                itemsInTheInventory.Remove((stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness()));
+        }
     }
 
 
     //Call it when changing position of the stack size in the same inventory
     public void ChangeItemStackPositionTo(ItemStack itemStack, Vector2Int position)
     {
-        int arrPosition = position.y*inventoryWidth+position.x;
-        if(itemsPositions[arrPosition]==null)
-            itemsPositions[itemStack.getCellsOccupied()[0]]=null;
-        else
+        if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            itemsPositions[itemStack.getCellsOccupied()[0]] = itemsPositions[arrPosition];
-            itemsPositions[itemStack.getCellsOccupied()[0]].getCellsOccupied()[0] = itemStack.getCellsOccupied()[0];
+            if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(itemStack.getItem())))
+            {
+                int arrPosition = position.y*inventoryWidth+position.x;
+                if(itemsPositions[arrPosition]==null)
+                    itemsPositions[itemStack.getCellsOccupied()[0]]=null;
+                else
+                {
+                    itemsPositions[itemStack.getCellsOccupied()[0]] = itemsPositions[arrPosition];
+                    itemsPositions[itemStack.getCellsOccupied()[0]].getCellsOccupied()[0] = itemStack.getCellsOccupied()[0];
+                }
+                
+                itemsPositions[arrPosition] = itemStack;
+                itemStack.getCellsOccupied()[0]=arrPosition;
+            }
         }
-        
-        itemsPositions[arrPosition] = itemStack;
-        itemStack.getCellsOccupied()[0]=arrPosition;
     }
 
 

@@ -8,10 +8,12 @@ public class ItemComponent : MonoBehaviour
     [SerializeField] private Sprite picture;
 
     [Header("Change only if 5 tier rareness is enabled")]
-    [SerializeField] private Rareness rareness;
+    [SerializeField] private Rareness rareness = Rareness.None;
 
     [Header("Change only if items weight is enabled")]
     [SerializeField] private float itemWeight;
+
+    private InventoryConfiguration inventoryConfiguration;
 
     //Getters and setters
     public int getMaxNumberOfBlocksInAStack()
@@ -72,5 +74,29 @@ public class ItemComponent : MonoBehaviour
     public void setPicture(Sprite picture)
     {
         this.picture = picture;
+    }
+
+    public void setInventoryConfiguration(InventoryConfiguration inventoryConfiguration)
+    {
+        if(this.inventoryConfiguration==null)
+        {        
+            this.inventoryConfiguration = inventoryConfiguration;
+            if(inventoryConfiguration.useFiveTierRareness)
+                rareness = Rareness.Common;
+        }
+    }
+
+
+
+    private void Start()
+    {
+        if(itemName==null)
+            itemName = System.Guid.NewGuid().ToString();
+
+        if(inventoryConfiguration!=null)
+        {
+            if(inventoryConfiguration.useFiveTierRareness)
+                rareness = Rareness.Common;
+        }
     }
 }
