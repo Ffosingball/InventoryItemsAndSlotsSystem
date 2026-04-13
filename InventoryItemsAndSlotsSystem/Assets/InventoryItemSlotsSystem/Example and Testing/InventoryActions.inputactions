@@ -1,0 +1,55 @@
+{
+    "version": 1,
+    "name": "InventoryActions",
+    "maps": [
+        {
+            "name": "InventoryActions",
+            "id": "6c9e838b-6615-40e3-a6f9-7fb16bd9146a",
+            "actions": [
+                {
+                    "name": "SelectItem",
+                    "type": "Button",
+                    "id": "17c2a50b-3987-438b-b731-6cf890437168",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "DivideItem",
+                    "type": "Button",
+                    "id": "65d07ece-bcd6-4823-8337-2cfb53c4a6fa",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "0afd1364-0263-40b7-bc77-53470311e8ea",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Hold",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SelectItem",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1c8a46f9-3d88-4d92-8913-c21f8a5a168c",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DivideItem",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
