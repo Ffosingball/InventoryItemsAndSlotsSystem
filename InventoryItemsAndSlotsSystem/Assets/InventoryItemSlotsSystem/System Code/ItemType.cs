@@ -35,7 +35,6 @@ public enum InventoryType
 public class NewItemPlacementResult
 {
     public ItemStack stackReplaced=null;
-    public int amountOffItemFailedToPlace = 0;
     public bool invalidPosition=false;
     public bool stackCapReached=false;
 }

@@ -259,29 +259,6 @@ public class InventoryComponent : MonoBehaviour
     }
 
 
-    //Call it when changing position of the stack size in the same inventory
-    public void ChangeItemStackPositionTo(ItemStack itemStack, Vector2Int position)
-    {
-        if(inventoryConfiguration.arbitraryStackPlacement)
-        {
-            if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(itemStack.getItem())))
-            {
-                int arrPosition = position.y*inventoryWidth+position.x;
-                if(itemsPositions[arrPosition]==null)
-                    itemsPositions[itemStack.getCellsOccupied()[0]]=null;
-                else
-                {
-                    itemsPositions[itemStack.getCellsOccupied()[0]] = itemsPositions[arrPosition];
-                    itemsPositions[itemStack.getCellsOccupied()[0]].getCellsOccupied()[0] = itemStack.getCellsOccupied()[0];
-                }
-                
-                itemsPositions[arrPosition] = itemStack;
-                itemStack.getCellsOccupied()[0]=arrPosition;
-            }
-        }
-    }
-
-
     //Call when you changed inventory sizes and want to resize it
     //Returns the list of items which did not fit in the new inventory
     //(important if you decrease size of the inventory)

@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections.Generic;
 
 
 //This component has to be put at the scrollView ui gameObject!!
@@ -113,6 +112,8 @@ public class InventoryViewComponent : MonoBehaviour
                 RectTransform slotTransform = newSlot.GetComponent<RectTransform>();
                 slotTransform.anchoredPosition = currentPosition;
                 slotTransform.sizeDelta = new Vector2(slotSize, slotSize);
+
+                newSlot.GetComponent<InventorySlotComponent>().setPosition(new Vector2Int(j,i));
 
                 currentPosition.x += slotSize + marginBetweenSlots*slotSize;
             }
