@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
-using Microsoft.Unity.VisualStudio.Editor;
+using TMPro;
 
 
 //There should be just one inventory manager on the scene!
@@ -18,6 +18,8 @@ public class InventoryManager : MonoBehaviour
     //If in 2d this will be usefull. If 0 it will not change z value
     [SerializeField] private float zValueForMouseIcon=0f;
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
+    [SerializeField] private GameObject inventoryView;
+    [SerializeField] private GameObject inventorySlot;
 
     private ItemStack selectedItemStack;
     private ItemStack pickedByMouse;
@@ -42,6 +44,7 @@ public class InventoryManager : MonoBehaviour
     {
         inventoryViewsCurrentlyOpened = new List<InventoryViewComponent>();
         mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
     }
 
 
@@ -125,112 +128,182 @@ public class InventoryManager : MonoBehaviour
 
     public void LeftMouseClick()
     {
-        Vector2Int slotPosition = GetSlotPosition();
-        if(slotPosition.x==-1)
-            return;
-
-        GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-        if(pickedByMouse==null)
-            selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-        else
+        if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
-            if(placementResult.stackReplaced!=null)
-            {
-                pickedByMouse = placementResult.stackReplaced;
-                itemPickedAt = inventoryOverWhichMouseIs;
-                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-            }
+            Vector2Int slotPosition = GetSlotPosition();
+            if(slotPosition.x==-1)
+                return;
+
+            GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+
+            if(pickedByMouse==null)
+                selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
             else
             {
-                pickedByMouse = null;
-                itemPickedAt = null;
-                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+                NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
+                if(placementResult.stackCapReached)
+                {
+                    Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                }
+                if(placementResult.stackReplaced!=null)
+                {
+                    pickedByMouse = placementResult.stackReplaced;
+                    itemPickedAt = inventoryOverWhichMouseIs;
+                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                }
+                else
+                {
+                    pickedByMouse = null;
+                    itemPickedAt = null;
+                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
+                }
             }
+
+            GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
         }
     }
 
 
     public void LeftMouseHold()
     {
-        Vector2Int slotPosition = GetSlotPosition();
-        if(slotPosition.x==-1)
-            return;
-
-        GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-        if(pickedByMouse==null)
+        if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            pickedByMouse = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-            inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
-            mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-            selectedItemStack = null;
+            Vector2Int slotPosition = GetSlotPosition();
+            if(slotPosition.x==-1)
+                return;
+
+            GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+
+            if(pickedByMouse==null)
+            {
+                pickedByMouse = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                selectedItemStack = null;
+            }
+
+            GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
         }
     }
 
 
     public void RightMouseClick()
     {
-        Vector2Int slotPosition = GetSlotPosition();
-        if(slotPosition.x==-1)
-            return;
-
-        GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-        if(pickedByMouse==null)
+        if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-            ItemStack itemStackToDivide = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-            inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
-            mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-            itemPickedAt = inventoryOverWhichMouseIs;
+            Vector2Int slotPosition = GetSlotPosition();
+            if(slotPosition.x==-1)
+                return;
 
-            if(selectedItemStack.getNumOfItems()>1)
+            GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+
+            if(pickedByMouse==null)
             {
-                pickedByMouse = new ItemStack(selectedItemStack.getItem(),inventoryConfiguration,-1);
-                pickedByMouse.IncreaseAmountBy(selectedItemStack.getNumOfItems()/2);
-                selectedItemStack.DecreaseAmountBy(pickedByMouse.getNumOfItems());
-            }
-            else
-            {
-                pickedByMouse = selectedItemStack;
-                selectedItemStack = null;
-            }
-        }
-        else
-        {
-            if(inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition)==null)
-            {
+                selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                ItemStack itemStackToDivide = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                itemPickedAt = inventoryOverWhichMouseIs;
+
+                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+
+                if(selectedItemStack==null)
+                    return;
                 if(selectedItemStack.getNumOfItems()>1)
                 {
-                    ItemStack newStack = new ItemStack(pickedByMouse.getItem(),inventoryConfiguration,-1);
-                    newStack.IncreaseAmountBy(1);
-                    pickedByMouse.DecreaseAmountBy(1);
-                    inventoryOverWhichMouseIs.PlaceItemStackToInventory(newStack, slotPosition);
+                    pickedByMouse = new ItemStack(selectedItemStack.getItem(),inventoryConfiguration,-1);
+                    pickedByMouse.IncreaseAmountBy(selectedItemStack.getNumOfItems()/2);
+                    selectedItemStack.DecreaseAmountBy(pickedByMouse.getNumOfItems());
                 }
                 else
                 {
-                    inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
-                    pickedByMouse = null;
-                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
-                    itemPickedAt = null;
+                    pickedByMouse = selectedItemStack;
+                    selectedItemStack = null;
                 }
             }
+            else
+            {
+                if(inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition)==null)
+                {
+                    if(pickedByMouse.getNumOfItems()>1)
+                    {
+                        ItemStack newStack = new ItemStack(pickedByMouse.getItem(),inventoryConfiguration,-1);
+                        newStack.IncreaseAmountBy(1);
+                        
+                        NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(newStack, slotPosition);
+                        if(placementResult.stackCapReached)
+                            Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                        else
+                            pickedByMouse.DecreaseAmountBy(1);
+                    }
+                    else
+                    {
+                        NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
+                        if(placementResult.stackCapReached)
+                            Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                        else
+                        {
+                            pickedByMouse = null;
+                            mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+                            mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
+                            itemPickedAt = null;
+                        }
+                    }
+                }
+            }
+
+            GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
         }
     }
 
 
 
-    public void OpenInventory(InventoryComponent inventoryComponent)
+    // Size and position should be from 0 to 1 
+    public void OpenInventory(InventoryComponent inventoryComponent, Vector2 size, Vector2 position)
     {
+        GameObject newView = Instantiate(inventoryView);
+        InventoryViewComponent newInventoryView = newView.GetComponent<InventoryViewComponent>();
         
+        newInventoryView.setInventoryComponent(inventoryComponent);
+        newInventoryView.setPosition(position);
+        newInventoryView.setViewHeight(size.y);
+        newInventoryView.setViewWidth(size.x);
+        newInventoryView.setInventorySlot(inventorySlot);
+        
+        newInventoryView.CreateView();
+        inventoryViewsCurrentlyOpened.Add(newInventoryView);
     }
 
 
 
     public void CloseInventory(InventoryComponent inventoryComponent)
     {
-        
+        InventoryViewComponent viewToDelete = GetViewOfTheInventory(inventoryComponent);
+
+        if(viewToDelete!=null)
+        {
+            inventoryViewsCurrentlyOpened.Remove(viewToDelete);
+
+            if(pickedByMouse!=null)
+            {
+                if(itemPickedAt==inventoryComponent)
+                {
+                    int result = inventoryComponent.AddItemsToInventory(pickedByMouse.getItem(),pickedByMouse.getNumOfItems());
+
+                    if(result>0)
+                    {
+                        Debug.Log("DROP "+pickedByMouse.getItem().getItemName());
+                    }
+
+                    pickedByMouse = null;
+                    itemPickedAt = null;
+                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
+                }
+            }
+        }
     }
 }

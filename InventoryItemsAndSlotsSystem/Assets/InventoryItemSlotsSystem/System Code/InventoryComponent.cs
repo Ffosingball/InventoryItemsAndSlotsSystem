@@ -6,14 +6,14 @@ using System.Collections.Generic;
 public class InventoryComponent : MonoBehaviour
 {
     [SerializeField] private bool isInventoryInfinite = false;
-    [SerializeField] private int inventoryWidth=10, newInventoryWidth=10;
-    [SerializeField] private int inventoryHeight=5, newInventoryHeight=10;
+    [SerializeField] private int inventoryWidth=10, inventoryHeight=10;
     [Header("How many cells of the inventory is visible in a single view, if height is more than visible height then you will need to scroll an inventory")]
     [SerializeField] private string inventoryName = null;
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
 
     private Dictionary<(string, Rareness), List<ItemStack>> itemsInTheInventory;
     private ItemStack[] itemsPositions;
+    private int newInventoryWidth=10, newInventoryHeight=10;
 
 
     //Getters and setters
