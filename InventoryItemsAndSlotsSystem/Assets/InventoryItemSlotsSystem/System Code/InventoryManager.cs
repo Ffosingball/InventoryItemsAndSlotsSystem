@@ -338,6 +338,8 @@ public class InventoryManager : MonoBehaviour
 
     public void UpdateInventoryView(InventoryComponent inventoryComponent)
     {
-        GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+        InventoryViewComponent invView = GetViewOfTheInventory(inventoryComponent);
+        if(invView!=null)
+            invView.UpdateView();
     }
 }

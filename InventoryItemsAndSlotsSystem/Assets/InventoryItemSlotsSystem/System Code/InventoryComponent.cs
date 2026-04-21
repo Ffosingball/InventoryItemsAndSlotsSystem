@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 
 
 //For the position in the inventory count from (0,0)
@@ -12,8 +13,8 @@ public class InventoryComponent : MonoBehaviour
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
 
     private Dictionary<(string, Rareness), List<ItemStack>> itemsInTheInventory;
-    private ItemStack[] itemsPositions;
-    private int newInventoryWidth=10, newInventoryHeight=10;
+    private List<ItemStack> itemsPositions;
+    private int newInventoryWidth=10, newInventoryHeight=10, initialInventoryHeight;
 
 
     //Getters and setters
@@ -62,7 +63,7 @@ public class InventoryComponent : MonoBehaviour
         inventoryConfiguration = configuration;
     }
 
-    public ItemStack[] getItemsInTheInventory()
+    public List<ItemStack> getItemsInTheInventory()
     {
         return itemsPositions;
     }
@@ -75,7 +76,14 @@ public class InventoryComponent : MonoBehaviour
             inventoryName = System.Guid.NewGuid().ToString();
 
         itemsInTheInventory = new Dictionary<(string, Rareness),List<ItemStack>>();
-        itemsPositions = new ItemStack[inventoryWidth*inventoryHeight];
+        
+        itemsPositions = new List<ItemStack>();
+        for(int i=0; i<inventoryWidth*inventoryHeight; i++)
+        {
+            itemsPositions.Add(null);
+        }
+
+        initialInventoryHeight = inventoryHeight;
     }
 
 
@@ -87,7 +95,7 @@ public class InventoryComponent : MonoBehaviour
             int arrPosition = position.y*inventoryWidth+position.x;
             NewItemPlacementResult placementResult = new NewItemPlacementResult();
 
-            if(itemsPositions.Length<=arrPosition || arrPosition<0)
+            if(itemsPositions.Count<=arrPosition || arrPosition<0)
             {
                 placementResult.invalidPosition=true;
                 return placementResult;
@@ -164,7 +172,7 @@ public class InventoryComponent : MonoBehaviour
         else
             itemsInTheInventory.Add((item.getItemName(),item.getRareness()), new List<ItemStack>());
 
-        for(int i=0; i<itemsPositions.Length; i++)
+        for(int i=0; i<itemsPositions.Count; i++)
         {
             if(itemsPositions[i]==null)
             {
@@ -178,6 +186,41 @@ public class InventoryComponent : MonoBehaviour
 
                     if(amount<=0)
                         return 0;
+                }
+            }
+        }
+
+        if(isInventoryInfinite)
+        {
+            int numOfStacksWillAppear = amount/item.getMaxNumberOfBlocksInAStack();
+            if(numOfStacksWillAppear%item.getMaxNumberOfBlocksInAStack()!=0)
+                numOfStacksWillAppear++;
+
+            int heightToAdd = numOfStacksWillAppear/inventoryWidth;
+            if(numOfStacksWillAppear%inventoryWidth!=0)
+                heightToAdd++;
+
+            for(int i=0; i<heightToAdd*inventoryWidth; i++)
+            {
+                itemsPositions.Add(null);
+            }
+            inventoryHeight+=heightToAdd;
+
+            for(int i=(inventoryHeight-heightToAdd)*inventoryWidth; i<itemsPositions.Count; i++)
+            {
+                if(itemsPositions[i]==null)
+                {
+                    if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(item)))
+                    {
+                        ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
+                        amount = newItemStack.IncreaseAmountBy(amount);
+
+                        itemsPositions[i] = newItemStack;
+                        itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
+
+                        if(amount<=0)
+                            return 0;
+                    }
                 }
             }
         }
@@ -216,6 +259,63 @@ public class InventoryComponent : MonoBehaviour
                 else
                     break;
             }
+        }
+
+        if(inventoryHeight>initialInventoryHeight)
+        {
+            int j = 0;
+            //Debug.Log("Length: "+itemsPositions.Count);
+            for(int i=itemsPositions.Count-1; i>0; i--)
+            {
+                if(itemsPositions[i]!=null)
+                {
+                    while(itemsPositions[j]!=null)
+                    {
+                        j++;
+                        //Debug.Log("i: "+i+"; j: "+j);
+
+                        if(j>=i)
+                            break;
+                    }
+
+                    if(j>=i)
+                        break;
+
+                    itemsPositions[j] = itemsPositions[i];
+                    itemsPositions[j].getCellsOccupied().RemoveAt(0);
+                    itemsPositions[j].getCellsOccupied().Add(j);
+                }
+
+                itemsPositions.RemoveAt(i);
+            }
+
+            j++;
+            //Debug.Log("After transfer: "+itemsPositions.Count);
+
+            if(j>initialInventoryHeight*inventoryWidth)
+            {
+                //Debug.Log("J: "+j);
+                inventoryHeight=j/inventoryWidth;
+                if(j%inventoryWidth!=0)
+                {
+                    //Debug.Log("j has left: "+(j%inventoryWidth));
+                    for(int i=0; i<inventoryWidth-(j%inventoryWidth); i++)
+                    {
+                        itemsPositions.Add(null);
+                    }
+                    inventoryHeight++;
+                }
+            }
+            else
+            {
+                inventoryHeight=initialInventoryHeight;
+                for(int i=j; i<inventoryHeight*inventoryWidth; i++)
+                {
+                    itemsPositions.Add(null);
+                }
+            }
+
+            //Debug.Log("After adding: "+itemsPositions.Count);
         }
 
         return true;
@@ -282,47 +382,57 @@ public class InventoryComponent : MonoBehaviour
     //(important if you decrease size of the inventory)
     public List<ItemStack> ResizeInventory()
     {
-        inventoryHeight = newInventoryHeight;
-        inventoryWidth = newInventoryWidth;
-
-        ItemStack[] resizedItemsPositions = itemsPositions = new ItemStack[inventoryWidth*inventoryHeight];
-
-        if(itemsPositions.Length<resizedItemsPositions.Length)
+        if(!isInventoryInfinite)
         {
-            for(int i=0; i<itemsPositions.Length; i++)
+            inventoryHeight = newInventoryHeight;
+            initialInventoryHeight = inventoryHeight;
+            inventoryWidth = newInventoryWidth;
+
+            List<ItemStack> resizedItemsPositions = new List<ItemStack>();
+            for(int i=0; i<inventoryWidth*inventoryHeight; i++)
             {
-                resizedItemsPositions[i] = itemsPositions[i];
+                resizedItemsPositions.Add(null);
             }
 
-            itemsPositions = resizedItemsPositions;
-            return null;
-        }
-        else
-        {
-            int positionsSkipped=0;
-            for(int i=0; i<resizedItemsPositions.Length; i++)
+            if(itemsPositions.Count<resizedItemsPositions.Count)
             {
-                if(itemsPositions[i]!=null)
-                    resizedItemsPositions[i] = itemsPositions[i+positionsSkipped];
-                else
-                    positionsSkipped++;
-
-                if(positionsSkipped+i>=resizedItemsPositions.Length)
+                for(int i=0; i<itemsPositions.Count; i++)
                 {
-                    itemsPositions = resizedItemsPositions;
-                    return null;
+                    resizedItemsPositions[i] = itemsPositions[i];
                 }
-            }
 
-            List<ItemStack> itemStacksRemoved = new List<ItemStack>();
-            for(int i=resizedItemsPositions.Length+positionsSkipped; i<itemsPositions.Length; i++)
+                itemsPositions = resizedItemsPositions;
+                return null;
+            }
+            else
             {
-                if(itemsPositions[i]!=null)
-                    itemStacksRemoved.Add(itemsPositions[i]);
-            }
+                int positionsSkipped=0;
+                for(int i=0; i<resizedItemsPositions.Count; i++)
+                {
+                    if(itemsPositions[i]!=null)
+                        resizedItemsPositions[i] = itemsPositions[i+positionsSkipped];
+                    else
+                        positionsSkipped++;
 
-            itemsPositions = resizedItemsPositions;
-            return itemStacksRemoved;
+                    if(positionsSkipped+i>=resizedItemsPositions.Count)
+                    {
+                        itemsPositions = resizedItemsPositions;
+                        return null;
+                    }
+                }
+
+                List<ItemStack> itemStacksRemoved = new List<ItemStack>();
+                for(int i=resizedItemsPositions.Count+positionsSkipped; i<itemsPositions.Count; i++)
+                {
+                    if(itemsPositions[i]!=null)
+                        itemStacksRemoved.Add(itemsPositions[i]);
+                }
+
+                itemsPositions = resizedItemsPositions;
+                return itemStacksRemoved;
+            }
         }
+
+        return null;
     }
 }

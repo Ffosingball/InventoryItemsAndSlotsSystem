@@ -1980,7 +1980,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryComponent
   isInventoryInfinite: 0
   inventoryWidth: 5
-  inventoryHeight: 3
+  inventoryHeight: 4
   inventoryName: ChestInvent
   inventoryConfiguration: {fileID: 11400000, guid: 3400fbcd7d4bee34a9f813afbb9878c9, type: 2}
 --- !u!4 &641693562
