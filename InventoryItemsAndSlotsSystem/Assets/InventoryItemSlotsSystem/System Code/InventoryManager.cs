@@ -62,14 +62,27 @@ public class InventoryManager : MonoBehaviour
             List<RaycastResult> results = new List<RaycastResult>();
             eventSystem.RaycastAll(pointerData, results);
 
+            bool foundSlot=false;
             foreach (RaycastResult result in results)
             {
-                //Debug.Log("Hit UI: " + result.gameObject.name);
+                if(result.gameObject.TryGetComponent<InventorySlotComponent>(out InventorySlotComponent inventorySlot))
+                {
+                    //Debug.Log("Found slot!");
+                    selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(inventorySlot.getPosition());
+                    GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(inventorySlot.getPosition());
+                    foundSlot=true;
+                }
+
                 if(result.gameObject.TryGetComponent<InventoryViewComponent>(out InventoryViewComponent inventoryView))
                 {
                     inventoryOverWhichMouseIs = inventoryView.getInventoryComponent();
                     break;
                 }
+            }
+
+            if(!foundSlot)
+            {
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).DeselectSlot();
             }
         }
         else if(inventoryViewsCurrentlyOpened.Count==1)
@@ -138,10 +151,22 @@ public class InventoryManager : MonoBehaviour
                 if(slotPosition.x==-1)
                     return;
 
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+                //GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
 
                 if(pickedByMouse==null)
+                {
                     selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                    pickedByMouse = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+
+                    if(pickedByMouse!=null)
+                    {
+                        //Debug.Log("Not called?");
+                        inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                        mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                        selectedItemStack = null;
+                    }
+                }
                 else
                 {
                     NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
@@ -171,39 +196,6 @@ public class InventoryManager : MonoBehaviour
     }
 
 
-    public void LeftMouseHold()
-    {
-         if(inventoryOverWhichMouseIs!=null)
-        {
-            if(inventoryConfiguration.arbitraryStackPlacement)
-            {
-                Vector2Int slotPosition = GetSlotPosition();
-                if(slotPosition.x==-1)
-                    return;
-
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-                if(pickedByMouse==null)
-                {
-                    //Debug.Log("Picked item");
-                    pickedByMouse = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-
-                    if(pickedByMouse!=null)
-                    {
-                        //Debug.Log("Not called?");
-                        inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
-                        mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
-                        selectedItemStack = null;
-                    }
-                }
-
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
-            }
-        }
-    }
-
-
     public void RightMouseClick()
     {
          if(inventoryOverWhichMouseIs!=null)
@@ -214,7 +206,7 @@ public class InventoryManager : MonoBehaviour
                 if(slotPosition.x==-1)
                     return;
 
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+                //GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
 
                 if(pickedByMouse==null)
                 {

@@ -168,8 +168,7 @@ public class InventoryViewComponent : MonoBehaviour
     {
         if(viewCreated)
         {
-            if(selectedSlotPosition.x!=-1)
-                DeselectSlot(selectedSlotPosition);
+            DeselectSlot();
 
             GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
 
@@ -190,13 +189,13 @@ public class InventoryViewComponent : MonoBehaviour
 
 
 
-    public bool DeselectSlot(Vector2Int position)
+    public bool DeselectSlot()
     {
-        if(viewCreated)
+        if(viewCreated && selectedSlotPosition.x!=-1)
         {
-            if(content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString())!=null)
+            if(content.transform.Find((selectedSlotPosition.x+selectedSlotPosition.y*inventoryComponent.getInventoryWidth()).ToString())!=null)
             {
-                GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
+                GameObject selecetdSlot = content.transform.Find((selectedSlotPosition.x+selectedSlotPosition.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
 
                 Image slotBackground = selecetdSlot.GetComponent<Image>();
                 Color color = slotBackground.color;
@@ -221,7 +220,7 @@ public class InventoryViewComponent : MonoBehaviour
         //Debug.Log("Should update it!");
         if(viewCreated)
         {
-            Debug.Log("Inv. height: "+inventoryComponent.getInventoryHeight());
+            //Debug.Log("Inv. height: "+inventoryComponent.getInventoryHeight());
             if(inventoryComponent.getInventoryHeight()!=lastInventoryHeight)
             {
                 float slotSize = (rectTransform.sizeDelta.x*(1-2*outerMargin))/(inventoryComponent.getInventoryWidth()+((inventoryComponent.getInventoryWidth()-1)*marginBetweenSlots));
@@ -289,7 +288,7 @@ public class InventoryViewComponent : MonoBehaviour
 
             //Debug.Log("Updating view!");
             List<ItemStack> itemStacks = inventoryComponent.getItemsInTheInventory();
-            Debug.Log("Length: "+itemStacks.Count);
+            //Debug.Log("Length: "+itemStacks.Count);
 
             for(int i=0; i<itemStacks.Count; i++)
             {
