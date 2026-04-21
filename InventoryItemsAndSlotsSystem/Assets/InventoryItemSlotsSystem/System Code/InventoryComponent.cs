@@ -189,20 +189,33 @@ public class InventoryComponent : MonoBehaviour
     public bool RemoveItemsFromInventory(ItemComponent item, int amount)
     {
         //COMPLETE HERE!
-        if(amount>GetTotalAmountOfThisItem(item))
+        if(amount>GetTotalAmountOfThisItem(item) || amount<=0)
             return false;
 
-        while(true)
+        if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness())))
         {
-            amount = itemsInTheInventory[(item.getItemName(),item.getRareness())][0].DecreaseAmountBy(amount);
-
-            if(amount>0)
+            while(true)
             {
-                itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
-                itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
+                amount = itemsInTheInventory[(item.getItemName(),item.getRareness())][0].DecreaseAmountBy(amount);
+
+                if(amount>0)
+                {
+                    itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
+                    itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
+                }
+                else if(amount==0)
+                {
+                    if(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getNumOfItems()==0)
+                    {
+                        itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
+                        itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
+                    }
+
+                    break;
+                }
+                else
+                    break;
             }
-            else
-                break;
         }
 
         return true;
@@ -211,13 +224,18 @@ public class InventoryComponent : MonoBehaviour
 
     public int GetTotalAmountOfThisItem(ItemComponent item)
     {
-        int totalAmount=0;
-        foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
+        if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness())))
         {
-            totalAmount+=itemStack.getNumOfItems();
+            int totalAmount=0;
+            foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
+            {
+                totalAmount+=itemStack.getNumOfItems();
+            }
+
+            return totalAmount;
         }
 
-        return totalAmount;
+        return 0;
     }
 
 

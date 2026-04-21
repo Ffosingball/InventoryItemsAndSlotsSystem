@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5691904608830752953}
   - component: {fileID: 8697474152261901655}
   - component: {fileID: 3116513246900731992}
+  - component: {fileID: 1595197359119479661}
   m_Layer: 5
   m_Name: InventoryView
   m_TagString: Untagged
@@ -94,7 +95,7 @@ MonoBehaviour:
   m_Content: {fileID: 2324875755625787426}
   m_Horizontal: 1
   m_Vertical: 1
-  m_MovementType: 1
+  m_MovementType: 2
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
@@ -109,6 +110,26 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1595197359119479661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2629445743967957760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ee231020f344084097aa75587bcfe6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryViewComponent
+  inventoryComponent: {fileID: 0}
+  viewWidth: 0.3
+  viewHeight: 0.3
+  marginBetweenSlots: 0.2
+  outerMargin: 0.03
+  inventorySlot: {fileID: 0}
+  position: {x: 0, y: 0}
+  nothing: {fileID: 21300000, guid: 77c352402f519c74d83f355f77782641, type: 3}
 --- !u!1 &3328228035626966912
 GameObject:
   m_ObjectHideFlags: 0

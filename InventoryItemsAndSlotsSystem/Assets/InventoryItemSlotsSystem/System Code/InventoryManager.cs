@@ -20,6 +20,7 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
     [SerializeField] private GameObject inventoryView;
     [SerializeField] private GameObject inventorySlot;
+    [SerializeField] private GameObject uiCanvas;
 
     private ItemStack selectedItemStack;
     private ItemStack pickedByMouse;
@@ -121,6 +122,7 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
+        //Debug.Log("Slot selected: "+slotPosition.x+"; "+slotPosition.y);
         return slotPosition;
     }
 
@@ -128,134 +130,151 @@ public class InventoryManager : MonoBehaviour
 
     public void LeftMouseClick()
     {
-        if(inventoryConfiguration.arbitraryStackPlacement)
+        if(inventoryOverWhichMouseIs!=null)
         {
-            Vector2Int slotPosition = GetSlotPosition();
-            if(slotPosition.x==-1)
-                return;
-
-            GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-            if(pickedByMouse==null)
-                selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-            else
+            if(inventoryConfiguration.arbitraryStackPlacement)
             {
-                NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
-                if(placementResult.stackCapReached)
-                {
-                    Debug.Log("Stack cap reached! Cannot insert more items of this type!");
-                }
-                if(placementResult.stackReplaced!=null)
-                {
-                    pickedByMouse = placementResult.stackReplaced;
-                    itemPickedAt = inventoryOverWhichMouseIs;
-                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
-                }
+                Vector2Int slotPosition = GetSlotPosition();
+                if(slotPosition.x==-1)
+                    return;
+
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+
+                if(pickedByMouse==null)
+                    selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
                 else
                 {
-                    pickedByMouse = null;
-                    itemPickedAt = null;
-                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
-                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
+                    NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
+                    if(placementResult.stackCapReached)
+                    {
+                        Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                    }
+                    if(placementResult.stackReplaced!=null)
+                    {
+                        pickedByMouse = placementResult.stackReplaced;
+                        itemPickedAt = inventoryOverWhichMouseIs;
+                        mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                    }
+                    else
+                    {
+                        pickedByMouse = null;
+                        itemPickedAt = null;
+                        mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
+                    }
                 }
-            }
 
-            GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+            }
         }
     }
 
 
     public void LeftMouseHold()
     {
-        if(inventoryConfiguration.arbitraryStackPlacement)
+         if(inventoryOverWhichMouseIs!=null)
         {
-            Vector2Int slotPosition = GetSlotPosition();
-            if(slotPosition.x==-1)
-                return;
-
-            GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-            if(pickedByMouse==null)
+            if(inventoryConfiguration.arbitraryStackPlacement)
             {
-                pickedByMouse = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-                inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
-                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
-                selectedItemStack = null;
-            }
+                Vector2Int slotPosition = GetSlotPosition();
+                if(slotPosition.x==-1)
+                    return;
 
-            GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+
+                if(pickedByMouse==null)
+                {
+                    //Debug.Log("Picked item");
+                    pickedByMouse = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+
+                    if(pickedByMouse!=null)
+                    {
+                        //Debug.Log("Not called?");
+                        inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                        mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                        selectedItemStack = null;
+                    }
+                }
+
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+            }
         }
     }
 
 
     public void RightMouseClick()
     {
-        if(inventoryConfiguration.arbitraryStackPlacement)
+         if(inventoryOverWhichMouseIs!=null)
         {
-            Vector2Int slotPosition = GetSlotPosition();
-            if(slotPosition.x==-1)
-                return;
-
-            GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
-
-            if(pickedByMouse==null)
+            if(inventoryConfiguration.arbitraryStackPlacement)
             {
-                selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-                ItemStack itemStackToDivide = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
-                inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
-                itemPickedAt = inventoryOverWhichMouseIs;
-
-                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
-
-                if(selectedItemStack==null)
+                Vector2Int slotPosition = GetSlotPosition();
+                if(slotPosition.x==-1)
                     return;
-                if(selectedItemStack.getNumOfItems()>1)
+
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(slotPosition);
+
+                if(pickedByMouse==null)
                 {
-                    pickedByMouse = new ItemStack(selectedItemStack.getItem(),inventoryConfiguration,-1);
-                    pickedByMouse.IncreaseAmountBy(selectedItemStack.getNumOfItems()/2);
-                    selectedItemStack.DecreaseAmountBy(pickedByMouse.getNumOfItems());
-                }
-                else
-                {
-                    pickedByMouse = selectedItemStack;
-                    selectedItemStack = null;
-                }
-            }
-            else
-            {
-                if(inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition)==null)
-                {
-                    if(pickedByMouse.getNumOfItems()>1)
+                    selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                    if(selectedItemStack==null)
+                        return;
+                    
+                    ItemStack itemStackToDivide = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                    //inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                    itemPickedAt = inventoryOverWhichMouseIs;
+
+                    if(selectedItemStack.getNumOfItems()>1)
                     {
-                        ItemStack newStack = new ItemStack(pickedByMouse.getItem(),inventoryConfiguration,-1);
-                        newStack.IncreaseAmountBy(1);
-                        
-                        NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(newStack, slotPosition);
-                        if(placementResult.stackCapReached)
-                            Debug.Log("Stack cap reached! Cannot insert more items of this type!");
-                        else
-                            pickedByMouse.DecreaseAmountBy(1);
+                        pickedByMouse = new ItemStack(selectedItemStack.getItem(),inventoryConfiguration,-1);
+                        pickedByMouse.IncreaseAmountBy(selectedItemStack.getNumOfItems()/2);
+                        selectedItemStack.DecreaseAmountBy(pickedByMouse.getNumOfItems());
                     }
                     else
                     {
-                        NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
-                        if(placementResult.stackCapReached)
-                            Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                        pickedByMouse = selectedItemStack;
+                        selectedItemStack = null;
+                        inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                    }
+
+                    mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                }
+                else
+                {
+                    if(inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition)==null)
+                    {
+                        if(pickedByMouse.getNumOfItems()>1)
+                        {
+                            ItemStack newStack = new ItemStack(pickedByMouse.getItem(),inventoryConfiguration,-1);
+                            newStack.IncreaseAmountBy(1);
+                            
+                            NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(newStack, slotPosition);
+                            if(placementResult.stackCapReached)
+                                Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                            else
+                                pickedByMouse.DecreaseAmountBy(1);
+                        }
                         else
                         {
-                            pickedByMouse = null;
-                            mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
-                            mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
-                            itemPickedAt = null;
+                            NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
+                            if(placementResult.stackCapReached)
+                                Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                            else
+                            {
+                                pickedByMouse = null;
+                                mouseItemIcon.GetComponent<SpriteRenderer>().sprite = null;
+                                mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
+                                itemPickedAt = null;
+                            }
                         }
                     }
                 }
-            }
 
-            GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+            }
         }
     }
 
@@ -264,17 +283,23 @@ public class InventoryManager : MonoBehaviour
     // Size and position should be from 0 to 1 
     public void OpenInventory(InventoryComponent inventoryComponent, Vector2 size, Vector2 position)
     {
-        GameObject newView = Instantiate(inventoryView);
-        InventoryViewComponent newInventoryView = newView.GetComponent<InventoryViewComponent>();
-        
-        newInventoryView.setInventoryComponent(inventoryComponent);
-        newInventoryView.setPosition(position);
-        newInventoryView.setViewHeight(size.y);
-        newInventoryView.setViewWidth(size.x);
-        newInventoryView.setInventorySlot(inventorySlot);
-        
-        newInventoryView.CreateView();
-        inventoryViewsCurrentlyOpened.Add(newInventoryView);
+        if(GetViewOfTheInventory(inventoryComponent)==null)
+        {
+            GameObject newView = Instantiate(inventoryView);
+            newView.transform.SetParent(uiCanvas.transform);
+            newView.GetComponent<RectTransform>().localScale = new Vector3(1,1,1);
+            InventoryViewComponent newInventoryView = newView.GetComponent<InventoryViewComponent>();
+            
+            newInventoryView.setInventoryComponent(inventoryComponent);
+            newInventoryView.setPosition(position);
+            newInventoryView.setViewHeight(size.y);
+            newInventoryView.setViewWidth(size.x);
+            newInventoryView.setInventorySlot(inventorySlot);
+            
+            newInventoryView.CreateView();
+            newInventoryView.UpdateView();
+            inventoryViewsCurrentlyOpened.Add(newInventoryView);
+        }
     }
 
 
@@ -304,6 +329,15 @@ public class InventoryManager : MonoBehaviour
                     mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = "";
                 }
             }
+
+            Destroy(viewToDelete.gameObject);
         }
+    }
+
+
+
+    public void UpdateInventoryView(InventoryComponent inventoryComponent)
+    {
+        GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
     }
 }

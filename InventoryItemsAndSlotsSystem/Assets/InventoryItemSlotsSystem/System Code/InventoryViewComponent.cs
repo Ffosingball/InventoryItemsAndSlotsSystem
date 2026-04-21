@@ -18,6 +18,7 @@ public class InventoryViewComponent : MonoBehaviour
     //In percentages, if less than 0 or more than 1 than it is outside of the window
     //(0.5, 0.5) is the center
     [SerializeField] private Vector2 position; 
+    [SerializeField] private Sprite nothing; 
 
 
     private RectTransform rectTransform;
@@ -80,26 +81,23 @@ public class InventoryViewComponent : MonoBehaviour
 
 
 
-    private void Start()
+    public void CreateView()
     {
         rectTransform = GetComponent<RectTransform>();
         content = transform.Find("Viewport").transform.Find("Content").gameObject;
         selectedSlotPosition = new Vector2Int(-1,-1);
-    }
 
-
-
-    public void CreateView()
-    {
-        rectTransform.anchoredPosition = new Vector2(position.x*Screen.width,position.y*Screen.height);
+        rectTransform.anchoredPosition = new Vector2((position.x*Screen.width)-(Screen.width/2),position.y*Screen.height);
         rectTransform.sizeDelta = new Vector2(viewWidth*Screen.width, viewHeight*Screen.height);
 
         float slotSize = (rectTransform.sizeDelta.x*(1-2*outerMargin))/(inventoryComponent.getInventoryWidth()+((inventoryComponent.getInventoryWidth()-1)*marginBetweenSlots));
-        Vector2 currentPosition = new Vector2(outerMargin*rectTransform.sizeDelta.x+slotSize/2,outerMargin*rectTransform.sizeDelta.x+slotSize/2);
+        Vector2 currentPosition = new Vector2((outerMargin*rectTransform.sizeDelta.x+slotSize/2)-(rectTransform.sizeDelta.x/2),(rectTransform.sizeDelta.y/2)-(outerMargin*rectTransform.sizeDelta.x+slotSize/2));
 
         RectTransform contentTransform = content.GetComponent<RectTransform>();
         Vector2 contentSize = contentTransform.sizeDelta;
         contentSize.y = slotSize*(inventoryComponent.getInventoryHeight()+marginBetweenSlots*(inventoryComponent.getInventoryHeight()-1))+outerMargin*2*rectTransform.sizeDelta.x;
+        //Debug.Log("Content y: "+contentSize.y);
+        contentTransform.sizeDelta = contentSize;
 
         for (int i=0; i<inventoryComponent.getInventoryHeight(); i++)
         {
@@ -107,19 +105,23 @@ public class InventoryViewComponent : MonoBehaviour
             {
                 GameObject newSlot = Instantiate(inventorySlot);
                 newSlot.transform.SetParent(content.transform);
-                newSlot.name = (j+i*inventoryComponent.getInventoryHeight()).ToString();
+                newSlot.name = (j+i*inventoryComponent.getInventoryWidth()).ToString();
                 
                 RectTransform slotTransform = newSlot.GetComponent<RectTransform>();
+                slotTransform.localScale = new Vector3(1,1,1);
                 slotTransform.anchoredPosition = currentPosition;
+                //Debug.Log(newSlot.name+") "+currentPosition.x+"; "+currentPosition.y);
                 slotTransform.sizeDelta = new Vector2(slotSize, slotSize);
 
-                newSlot.GetComponent<InventorySlotComponent>().setPosition(new Vector2Int(j,i));
+                InventorySlotComponent invSlotCom = newSlot.GetComponent<InventorySlotComponent>();
+                invSlotCom.setPosition(new Vector2Int(j,i));
+                //Debug.Log(newSlot.name+") "+invSlotCom.getPosition().x+"; "+invSlotCom.getPosition().y);
 
                 currentPosition.x += slotSize + marginBetweenSlots*slotSize;
             }
 
-            currentPosition.x -= (slotSize + marginBetweenSlots*slotSize)*(inventoryComponent.getInventoryWidth()-1);
-            currentPosition.y += slotSize + marginBetweenSlots*slotSize;
+            currentPosition.x -= (slotSize + marginBetweenSlots*slotSize)*inventoryComponent.getInventoryWidth();
+            currentPosition.y -= slotSize + marginBetweenSlots*slotSize;
         }
 
         viewCreated = true;
@@ -160,7 +162,7 @@ public class InventoryViewComponent : MonoBehaviour
             if(selectedSlotPosition.x!=-1)
                 DeselectSlot(selectedSlotPosition);
 
-            GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryHeight()).ToString()).gameObject;
+            GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
 
             Image slotBackground = selecetdSlot.GetComponent<Image>();
             Color color = slotBackground.color;
@@ -183,7 +185,7 @@ public class InventoryViewComponent : MonoBehaviour
     {
         if(viewCreated)
         {
-            GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryHeight()).ToString()).gameObject;
+            GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
 
             Image slotBackground = selecetdSlot.GetComponent<Image>();
             Color color = slotBackground.color;
@@ -204,19 +206,26 @@ public class InventoryViewComponent : MonoBehaviour
 
     public bool UpdateView()
     {
+        //Debug.Log("Should update it!");
         if(viewCreated)
         {
+            //Debug.Log("Updating view!");
             ItemStack[] itemStacks = inventoryComponent.getItemsInTheInventory();
 
             for(int i=0; i<itemStacks.Length; i++)
             {
+                Image slotImage = content.transform.Find(i.ToString()).Find("ItemImage").gameObject.GetComponent<Image>();
+                TMP_Text slotText = content.transform.Find(i.ToString()).Find("ItemText").gameObject.GetComponent<TMP_Text>();
+
                 if(itemStacks[i]!=null)
                 {
-                    Image slotImage = content.transform.Find(i.ToString()).Find("ItemImage").gameObject.GetComponent<Image>();
                     slotImage.sprite = itemStacks[i].getItem().getPicture();
-
-                    TMP_Text slotText = content.transform.Find(i.ToString()).Find("ItemText").gameObject.GetComponent<TMP_Text>();
                     slotText.text = itemStacks[i].getNumOfItems().ToString();
+                }
+                else
+                {
+                    slotImage.sprite = nothing;
+                    slotText.text = "";
                 }
             }
 
