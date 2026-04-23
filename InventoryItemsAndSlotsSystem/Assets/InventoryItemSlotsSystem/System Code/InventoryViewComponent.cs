@@ -170,6 +170,13 @@ public class InventoryViewComponent : MonoBehaviour
         {
             DeselectSlot();
 
+            //if(content==null)
+            //    Debug.Log("Content is null!");
+            //if(content.transform==null)
+            //    Debug.Log("Content transform is null!");
+            //if(inventoryComponent==null)
+            //    Debug.Log("InventoryComponent is null!");
+
             GameObject selecetdSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
 
             Image slotBackground = selecetdSlot.GetComponent<Image>();
@@ -299,7 +306,7 @@ public class InventoryViewComponent : MonoBehaviour
                 if(itemStacks[i]!=null)
                 {
                     slotImage.sprite = itemStacks[i].getItem().getPicture();
-                    slotText.text = itemStacks[i].getNumOfItems().ToString();
+                    slotText.text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : itemStacks[i].getNumOfItems().ToString();
                 }
                 else
                 {

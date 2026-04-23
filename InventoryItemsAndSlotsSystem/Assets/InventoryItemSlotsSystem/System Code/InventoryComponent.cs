@@ -15,6 +15,7 @@ public class InventoryComponent : MonoBehaviour
     private Dictionary<(string, Rareness), List<ItemStack>> itemsInTheInventory;
     private List<ItemStack> itemsPositions;
     private int newInventoryWidth=10, newInventoryHeight=10, initialInventoryHeight;
+    private int totalItems=0;
 
 
     //Getters and setters
@@ -68,6 +69,11 @@ public class InventoryComponent : MonoBehaviour
         return itemsPositions;
     }
 
+    //public int getTotalItems()
+    //{
+    //    return totalItems;
+    //}
+
 
 
     private void Start()
@@ -103,6 +109,7 @@ public class InventoryComponent : MonoBehaviour
 
             if(itemsPositions[arrPosition]!=null)
             {
+                totalItems--;
                 if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
                 {
                     int overflow = itemStack.IncreaseAmountBy(itemsPositions[arrPosition].getNumOfItems());
@@ -118,7 +125,7 @@ public class InventoryComponent : MonoBehaviour
                         placementResult.stackReplaced = itemsPositions[arrPosition];
                     else
                     {
-                        if(!(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(itemStack.getItem())))
+                        if(inventoryConfiguration.itemStacksLimit>GetNumberOfStacksOfThisItem(itemStack.getItem()))
                             placementResult.stackReplaced = itemsPositions[arrPosition];
                     }
                 }
@@ -130,7 +137,7 @@ public class InventoryComponent : MonoBehaviour
             }
 
 
-            if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(itemStack.getItem())))
+            if(inventoryConfiguration.itemStacksLimit<0 || inventoryConfiguration.itemStacksLimit>GetNumberOfStacksOfThisItem(itemStack.getItem()))
             {
                 ItemComponent newItem = itemStack.getItem();
                 if(!itemsInTheInventory.ContainsKey((newItem.getItemName(),newItem.getRareness())))
@@ -140,6 +147,21 @@ public class InventoryComponent : MonoBehaviour
 
                 itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
                 itemsPositions[arrPosition] = itemStack;
+                totalItems++;
+                //Debug.Log(inventoryName+") "+totalItems);
+
+                if(isInventoryInfinite && (inventoryHeight*inventoryWidth)-totalItems<=1)
+                {
+                    //Debug.Log("Start Growing!");
+
+                    for(int i=0; i<inventoryWidth; i++)
+                    {
+                        //Debug.Log(itemsPositions.Count);
+                        itemsPositions.Add(null);
+                    }
+                    inventoryHeight++;
+                    //Debug.Log(itemsPositions.Count);
+                }
 
                 return placementResult;
             }
@@ -159,6 +181,7 @@ public class InventoryComponent : MonoBehaviour
     {
         if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness())))
         {
+            //Debug.Log("Item already in the inventory!");
             foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
             {
                 if(!itemStack.getIsFull())
@@ -176,16 +199,27 @@ public class InventoryComponent : MonoBehaviour
         {
             if(itemsPositions[i]==null)
             {
-                if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(item)))
+                //Debug.Log("Found empty cell!");
+                if(inventoryConfiguration.itemStacksLimit<0 || inventoryConfiguration.itemStacksLimit>GetNumberOfStacksOfThisItem(item))
                 {
+                    //Debug.Log("Stack limit not reached!");
                     ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
                     amount = newItemStack.IncreaseAmountBy(amount);
+                    totalItems++;
 
                     itemsPositions[i] = newItemStack;
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
 
                     if(amount<=0)
+                    {
+                        //Debug.Log(inventoryName+") "+totalItems);
                         return 0;
+                    }
+                }
+                else
+                {
+                    //Debug.Log(inventoryName+") "+totalItems);
+                    return amount;
                 }
             }
         }
@@ -214,19 +248,83 @@ public class InventoryComponent : MonoBehaviour
                     {
                         ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
                         amount = newItemStack.IncreaseAmountBy(amount);
+                        totalItems++;
 
                         itemsPositions[i] = newItemStack;
                         itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
 
                         if(amount<=0)
+                        {
+                            //Debug.Log(itemsPositions.Count);
                             return 0;
+                        }
                     }
                 }
             }
         }
 
+        //Debug.Log(inventoryName+") "+totalItems);
         return amount;
     }
+
+
+    
+    private void ShrinkInfiniteInventory()
+    {
+        int j = 0;
+        //Debug.Log("Length: "+itemsPositions.Count);
+        for(int i=itemsPositions.Count-1; i>0; i--)
+        {
+            if(itemsPositions[i]!=null)
+            {
+                while(itemsPositions[j]!=null)
+                {
+                    j++;
+                    //Debug.Log("i: "+i+"; j: "+j);
+
+                    if(j>=i)
+                        break;
+                }
+
+                if(j>=i)
+                    break;
+
+                itemsPositions[j] = itemsPositions[i];
+                itemsPositions[j].getCellsOccupied().RemoveAt(0);
+                itemsPositions[j].getCellsOccupied().Add(j);
+            }
+
+            itemsPositions.RemoveAt(i);
+        }
+
+        j++;
+
+        if(j>initialInventoryHeight*inventoryWidth)
+        {
+            //Debug.Log("J: "+j);
+            inventoryHeight=j/inventoryWidth;
+            if(j%inventoryWidth!=0)
+            {
+                //Debug.Log("j has left: "+(j%inventoryWidth));
+                while(itemsPositions.Count%inventoryWidth!=0)
+                {
+                    itemsPositions.Add(null);
+                }
+                inventoryHeight++;
+            }
+        }
+        else
+        {
+            inventoryHeight=initialInventoryHeight;
+            for(int i=j; i<inventoryHeight*inventoryWidth; i++)
+            {
+                itemsPositions.Add(null);
+            }
+        }
+
+        //Debug.Log(itemsPositions.Count);
+    }
+
 
 
     public bool RemoveItemsFromInventory(ItemComponent item, int amount)
@@ -245,6 +343,7 @@ public class InventoryComponent : MonoBehaviour
                 {
                     itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
+                    totalItems--;
                 }
                 else if(amount==0)
                 {
@@ -252,6 +351,7 @@ public class InventoryComponent : MonoBehaviour
                     {
                         itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
                         itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
+                        totalItems--;
                     }
 
                     break;
@@ -263,61 +363,10 @@ public class InventoryComponent : MonoBehaviour
 
         if(inventoryHeight>initialInventoryHeight)
         {
-            int j = 0;
-            //Debug.Log("Length: "+itemsPositions.Count);
-            for(int i=itemsPositions.Count-1; i>0; i--)
-            {
-                if(itemsPositions[i]!=null)
-                {
-                    while(itemsPositions[j]!=null)
-                    {
-                        j++;
-                        //Debug.Log("i: "+i+"; j: "+j);
-
-                        if(j>=i)
-                            break;
-                    }
-
-                    if(j>=i)
-                        break;
-
-                    itemsPositions[j] = itemsPositions[i];
-                    itemsPositions[j].getCellsOccupied().RemoveAt(0);
-                    itemsPositions[j].getCellsOccupied().Add(j);
-                }
-
-                itemsPositions.RemoveAt(i);
-            }
-
-            j++;
-            //Debug.Log("After transfer: "+itemsPositions.Count);
-
-            if(j>initialInventoryHeight*inventoryWidth)
-            {
-                //Debug.Log("J: "+j);
-                inventoryHeight=j/inventoryWidth;
-                if(j%inventoryWidth!=0)
-                {
-                    //Debug.Log("j has left: "+(j%inventoryWidth));
-                    for(int i=0; i<inventoryWidth-(j%inventoryWidth); i++)
-                    {
-                        itemsPositions.Add(null);
-                    }
-                    inventoryHeight++;
-                }
-            }
-            else
-            {
-                inventoryHeight=initialInventoryHeight;
-                for(int i=j; i<inventoryHeight*inventoryWidth; i++)
-                {
-                    itemsPositions.Add(null);
-                }
-            }
-
-            //Debug.Log("After adding: "+itemsPositions.Count);
+            ShrinkInfiniteInventory();
         }
 
+        //Debug.Log(inventoryName+") "+totalItems);
         return true;
     }
 
@@ -342,9 +391,12 @@ public class InventoryComponent : MonoBehaviour
     public int GetNumberOfStacksOfThisItem(ItemComponent item)
     {
         int stacksAmount=0;
-        foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
+        if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness())))
         {
-            stacksAmount++;
+            foreach(ItemStack itemStack in itemsInTheInventory[(item.getItemName(),item.getRareness())])
+            {
+                stacksAmount++;
+            }
         }
 
         return stacksAmount;
@@ -359,6 +411,10 @@ public class InventoryComponent : MonoBehaviour
 
     public ItemStack GetItemStackByPosition(Vector2Int position)
     {
+        if(position.x<0 || position.y<0 || position.x>=inventoryWidth || position.y>=inventoryHeight)
+            return null;
+
+        //Debug.Log("Get pos: "+(position.y*inventoryWidth+position.x)+"; h: "+inventoryHeight+"; itPos.Count: "+itemsPositions.Count);
         return itemsPositions[position.y*inventoryWidth+position.x];
     }
 
@@ -367,12 +423,23 @@ public class InventoryComponent : MonoBehaviour
     {
         if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            ItemStack stackToRemove = itemsPositions[position.y*inventoryWidth+position.x];
-            itemsPositions[position.y*inventoryWidth+position.x]=null;
-            itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
+            if(itemsPositions[position.y*inventoryWidth+position.x]!=null)
+            {
+                ItemStack stackToRemove = itemsPositions[position.y*inventoryWidth+position.x];
+                itemsPositions[position.y*inventoryWidth+position.x]=null;
+                itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
+                totalItems--;
 
-            if(itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Count==0)
-                itemsInTheInventory.Remove((stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness()));
+                if(itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Count==0)
+                    itemsInTheInventory.Remove((stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness()));
+            }
+        }
+
+        //Debug.Log(inventoryName+") "+totalItems);
+
+        if(isInventoryInfinite && (inventoryHeight*inventoryWidth)-totalItems>=inventoryWidth+1 && inventoryHeight>initialInventoryHeight)
+        {
+            ShrinkInfiniteInventory();
         }
     }
 

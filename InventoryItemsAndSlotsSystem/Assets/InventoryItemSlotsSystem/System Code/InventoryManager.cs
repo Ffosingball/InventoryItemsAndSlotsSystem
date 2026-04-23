@@ -27,6 +27,7 @@ public class InventoryManager : MonoBehaviour
     private InventoryComponent inventoryOverWhichMouseIs;
     private List<InventoryViewComponent> inventoryViewsCurrentlyOpened;
     private InventoryComponent itemPickedAt;
+    //private InventoryViewComponent previouslySelectedView;
 
 
     public ItemStack getSelectedItemStack()
@@ -54,7 +55,7 @@ public class InventoryManager : MonoBehaviour
     {
         Vector2 mousePos = Mouse.current.position.ReadValue();
 
-        if(inventoryViewsCurrentlyOpened.Count>1)
+        if(inventoryViewsCurrentlyOpened.Count>0)
         {
             PointerEventData pointerData = new PointerEventData(eventSystem);
             pointerData.position = mousePos;
@@ -62,31 +63,33 @@ public class InventoryManager : MonoBehaviour
             List<RaycastResult> results = new List<RaycastResult>();
             eventSystem.RaycastAll(pointerData, results);
 
-            bool foundSlot=false;
+            if(inventoryOverWhichMouseIs!=null)
+            {
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).DeselectSlot();
+            }
+
+            inventoryOverWhichMouseIs=null;
+            InventorySlotComponent inventorySlot=null;
             foreach (RaycastResult result in results)
             {
-                if(result.gameObject.TryGetComponent<InventorySlotComponent>(out InventorySlotComponent inventorySlot))
-                {
-                    //Debug.Log("Found slot!");
-                    selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(inventorySlot.getPosition());
-                    GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(inventorySlot.getPosition());
-                    foundSlot=true;
-                }
+                if(inventorySlot==null)
+                    inventorySlot = result.gameObject.GetComponent<InventorySlotComponent>();
 
                 if(result.gameObject.TryGetComponent<InventoryViewComponent>(out InventoryViewComponent inventoryView))
                 {
                     inventoryOverWhichMouseIs = inventoryView.getInventoryComponent();
-                    break;
+                    //break;
                 }
             }
 
-            if(!foundSlot)
+            if(inventorySlot!=null && inventoryOverWhichMouseIs!=null)
             {
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).DeselectSlot();
+                selectedItemStack = inventoryOverWhichMouseIs.GetItemStackByPosition(inventorySlot.getPosition());
+                GetViewOfTheInventory(inventoryOverWhichMouseIs).SelectSlot(inventorySlot.getPosition());
             }
         }
-        else if(inventoryViewsCurrentlyOpened.Count==1)
-            inventoryOverWhichMouseIs = inventoryViewsCurrentlyOpened[0].getInventoryComponent();
+        //else if(inventoryViewsCurrentlyOpened.Count==1)
+        //    inventoryOverWhichMouseIs = inventoryViewsCurrentlyOpened[0].getInventoryComponent();
         else
             inventoryOverWhichMouseIs = null;
 
@@ -163,7 +166,7 @@ public class InventoryManager : MonoBehaviour
                         //Debug.Log("Not called?");
                         inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
                         mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
                         selectedItemStack = null;
                     }
                 }
@@ -174,12 +177,12 @@ public class InventoryManager : MonoBehaviour
                     {
                         Debug.Log("Stack cap reached! Cannot insert more items of this type!");
                     }
-                    if(placementResult.stackReplaced!=null)
+                    else if(placementResult.stackReplaced!=null)
                     {
                         pickedByMouse = placementResult.stackReplaced;
                         itemPickedAt = inventoryOverWhichMouseIs;
                         mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
                     }
                     else
                     {
@@ -232,7 +235,7 @@ public class InventoryManager : MonoBehaviour
                     }
 
                     mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
-                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getNumOfItems().ToString();
+                    mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
                 }
                 else
                 {
@@ -248,6 +251,9 @@ public class InventoryManager : MonoBehaviour
                                 Debug.Log("Stack cap reached! Cannot insert more items of this type!");
                             else
                                 pickedByMouse.DecreaseAmountBy(1);
+
+                            mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                            mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
                         }
                         else
                         {

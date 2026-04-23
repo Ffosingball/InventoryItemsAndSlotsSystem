@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: InventoryConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::InventoryConfiguration
   useFiveTierRareness: 0
-  itemStacksLimit: -1
+  itemStacksLimit: 5
   inventoryType: 0
-  arbitraryStackPlacement: 1
+  arbitraryStackPlacement: 0
   itemsHasAWeight: 0
