@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 public class TestingScript : MonoBehaviour
 {
@@ -13,10 +14,13 @@ public class TestingScript : MonoBehaviour
     [SerializeField] private ItemComponent wood;
     [SerializeField] private InventoryManager inventoryManager;
     [SerializeField] private TMP_Text amountText;
+    [SerializeField] private TMP_Text numInStackText, itemNameText, itemTypeText, rarenessText, itemWeightText, itemStackLimitText;
+    [SerializeField] private TMP_Text changeSizeByText;
 
     private InventoryComponent selectedInventory;
     private ItemComponent selectedItem;
     private int amount=0;
+    private int changeSize=0;
 
 
 
@@ -25,6 +29,70 @@ public class TestingScript : MonoBehaviour
     {
         selectedInventory = inventory1;
         selectedItem = apple;
+    }
+
+
+    void Update()
+    {
+        ItemStack selectedStack = inventoryManager.getSelectedItemStack();
+
+        if(selectedStack!=null)
+        {
+            ItemComponent selectedItem = selectedStack.getItem();
+
+            numInStackText.text = selectedItem.getMaxNumberOfBlocksInAStack().ToString();
+            itemNameText.text = selectedItem.getItemName();
+
+            switch(selectedItem.getItemType())
+            {
+                case ItemType.Weapon:
+                    itemTypeText.text = "Weapon";
+                    break;
+                case ItemType.Armour:
+                    itemTypeText.text = "Armour";
+                    break;
+                case ItemType.Artefact:
+                    itemTypeText.text = "Artefact";
+                    break;
+                case ItemType.Ingredient:
+                    itemTypeText.text = "Ingredient";
+                    break;
+                case ItemType.Junk:
+                    itemTypeText.text = "Junk";
+                    break;
+            }
+
+            switch(selectedItem.getRareness())
+            {
+                case Rareness.Common:
+                    rarenessText.text = "Common";
+                    break;
+                case Rareness.Uncommon:
+                    rarenessText.text = "Uncommon";
+                    break;
+                case Rareness.Rare:
+                    rarenessText.text = "Rare";
+                    break;
+                case Rareness.Epic:
+                    rarenessText.text = "Epic";
+                    break;
+                case Rareness.Legendary:
+                    rarenessText.text = "Legendary";
+                    break;
+            }
+
+            itemWeightText.text = (selectedItem.getItemWeight()*selectedStack.getNumOfItems()).ToString();
+            itemStackLimitText.text = selectedItem.getItemStackLimit().ToString();
+        }
+        else
+        {
+            numInStackText.text = "";
+            itemNameText.text = "";
+            itemTypeText.text = "";
+            rarenessText.text = "";
+            itemWeightText.text = "";
+            itemStackLimitText.text = "";
+        }
     }
 
 
@@ -147,5 +215,68 @@ public class TestingScript : MonoBehaviour
             selectedInventory.RemoveItemsFromInventory(selectedItem,selectedInventory.GetTotalAmountOfThisItem(selectedItem));
         
         inventoryManager.UpdateInventoryView(selectedInventory);
+    }
+
+
+    public void IncreaseChangeSize()
+    {
+        changeSize++;
+        changeSizeByText.text = changeSize.ToString();
+    }
+
+
+    public void DecreaseChangeSize()
+    {
+        changeSize--;
+        if(changeSize<0)
+            changeSize=0;
+
+        changeSizeByText.text = changeSize.ToString();
+    }
+
+
+
+    public void IncreaseInventoryWidth()
+    {
+        selectedInventory.setInventoryWidth(selectedInventory.getInventoryWidth()+changeSize);
+        ResizeInventory();
+    }
+
+
+    public void DecreaseInventoryWidth()
+    {
+        selectedInventory.setInventoryWidth(selectedInventory.getInventoryWidth()-changeSize);
+        ResizeInventory();
+    }
+
+
+    public void IncreaseInventoryHeight()
+    {
+        selectedInventory.setInventoryHeight(selectedInventory.getInventoryHeight()+changeSize);
+        ResizeInventory();
+    }
+
+
+    public void DecreaseInventoryHeight()
+    {
+        selectedInventory.setInventoryHeight(selectedInventory.getInventoryHeight()-changeSize);
+        ResizeInventory();
+    }
+
+
+    private void ResizeInventory()
+    {
+        List<ItemStack> extraStacks = selectedInventory.ResizeInventory();
+        if(extraStacks!=null)
+        {
+            string message = "Extra items: \n";
+
+            foreach(ItemStack extraStack in extraStacks)
+            {
+                message = message+extraStack.getItem().getItemName()+" x"+extraStack.getNumOfItems()+"; \n";
+            }
+
+            Debug.Log(message);
+        }
     }
 }

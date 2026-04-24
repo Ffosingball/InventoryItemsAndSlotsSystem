@@ -290,8 +290,6 @@ public class InventoryManager : MonoBehaviour
             
             newInventoryView.setInventoryComponent(inventoryComponent);
             newInventoryView.setPosition(position);
-            newInventoryView.setViewHeight(size.y);
-            newInventoryView.setViewWidth(size.x);
             newInventoryView.setInventorySlot(inventorySlot);
             
             newInventoryView.CreateView();

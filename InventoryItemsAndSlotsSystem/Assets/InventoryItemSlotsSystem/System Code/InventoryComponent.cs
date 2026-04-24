@@ -1,11 +1,14 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
+using System;
 
 
 //For the position in the inventory count from (0,0)
 public class InventoryComponent : MonoBehaviour
 {
+    public event Action OnResizing;
+
     [SerializeField] private bool isInventoryInfinite = false;
     [SerializeField] private int inventoryWidth=10, inventoryHeight=10;
     [Header("How many cells of the inventory is visible in a single view, if height is more than visible height then you will need to scroll an inventory")]
@@ -14,7 +17,7 @@ public class InventoryComponent : MonoBehaviour
 
     private Dictionary<(string, Rareness), List<ItemStack>> itemsInTheInventory;
     private List<ItemStack> itemsPositions;
-    private int newInventoryWidth=10, newInventoryHeight=10, initialInventoryHeight;
+    private int newInventoryWidth=-1, newInventoryHeight=-1, initialInventoryHeight;
     private int totalItems=0;
 
 
@@ -36,7 +39,8 @@ public class InventoryComponent : MonoBehaviour
 
     public void setInventoryHeight(int value)
     {
-        newInventoryHeight = value;
+        if(value>0)
+            newInventoryHeight = value;
     }
 
     public int getInventoryHeight()
@@ -46,7 +50,8 @@ public class InventoryComponent : MonoBehaviour
 
     public void setInventoryWidth(int value)
     {
-        newInventoryWidth = value;
+        if(value>0)
+            newInventoryWidth = value;
     }
 
     public string getInventoryName()
@@ -121,11 +126,11 @@ public class InventoryComponent : MonoBehaviour
                 }
                 else
                 {
-                    if(inventoryConfiguration.itemStacksLimit<0)
+                    if(!inventoryConfiguration.itemStacksLimit)
                         placementResult.stackReplaced = itemsPositions[arrPosition];
                     else
                     {
-                        if(inventoryConfiguration.itemStacksLimit>GetNumberOfStacksOfThisItem(itemStack.getItem()))
+                        if(itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
                             placementResult.stackReplaced = itemsPositions[arrPosition];
                     }
                 }
@@ -137,7 +142,7 @@ public class InventoryComponent : MonoBehaviour
             }
 
 
-            if(inventoryConfiguration.itemStacksLimit<0 || inventoryConfiguration.itemStacksLimit>GetNumberOfStacksOfThisItem(itemStack.getItem()))
+            if(!inventoryConfiguration.itemStacksLimit || itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
             {
                 ItemComponent newItem = itemStack.getItem();
                 if(!itemsInTheInventory.ContainsKey((newItem.getItemName(),newItem.getRareness())))
@@ -153,10 +158,10 @@ public class InventoryComponent : MonoBehaviour
                 if(isInventoryInfinite && (inventoryHeight*inventoryWidth)-totalItems<=1)
                 {
                     //Debug.Log("Start Growing!");
+                    //itemsPositions.Add(null);
 
                     for(int i=0; i<inventoryWidth; i++)
                     {
-                        //Debug.Log(itemsPositions.Count);
                         itemsPositions.Add(null);
                     }
                     inventoryHeight++;
@@ -200,7 +205,7 @@ public class InventoryComponent : MonoBehaviour
             if(itemsPositions[i]==null)
             {
                 //Debug.Log("Found empty cell!");
-                if(inventoryConfiguration.itemStacksLimit<0 || inventoryConfiguration.itemStacksLimit>GetNumberOfStacksOfThisItem(item))
+                if(!inventoryConfiguration.itemStacksLimit || item.getItemStackLimit()>GetNumberOfStacksOfThisItem(item))
                 {
                     //Debug.Log("Stack limit not reached!");
                     ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
@@ -238,13 +243,18 @@ public class InventoryComponent : MonoBehaviour
             {
                 itemsPositions.Add(null);
             }
+            /*while(itemsPositions.Count%inventoryWidth!=0)
+            {
+                //Debug.Log(itemsPositions.Count);
+                itemsPositions.Add(null);
+            }*/
             inventoryHeight+=heightToAdd;
 
             for(int i=(inventoryHeight-heightToAdd)*inventoryWidth; i<itemsPositions.Count; i++)
             {
                 if(itemsPositions[i]==null)
                 {
-                    if(inventoryConfiguration.itemStacksLimit<0 || !(inventoryConfiguration.itemStacksLimit>=GetNumberOfStacksOfThisItem(item)))
+                    if(!inventoryConfiguration.itemStacksLimit || item.getItemStackLimit()>GetNumberOfStacksOfThisItem(item))
                     {
                         ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
                         amount = newItemStack.IncreaseAmountBy(amount);
@@ -304,13 +314,11 @@ public class InventoryComponent : MonoBehaviour
             //Debug.Log("J: "+j);
             inventoryHeight=j/inventoryWidth;
             if(j%inventoryWidth!=0)
-            {
-                //Debug.Log("j has left: "+(j%inventoryWidth));
-                while(itemsPositions.Count%inventoryWidth!=0)
-                {
-                    itemsPositions.Add(null);
-                }
                 inventoryHeight++;
+
+            while(itemsPositions.Count%inventoryWidth!=0)
+            {
+                itemsPositions.Add(null);
             }
         }
         else
@@ -320,6 +328,11 @@ public class InventoryComponent : MonoBehaviour
             {
                 itemsPositions.Add(null);
             }
+            /*while(itemsPositions.Count%inventoryWidth!=0)
+            {
+                //Debug.Log(itemsPositions.Count);
+                itemsPositions.Add(null);
+            }*/
         }
 
         //Debug.Log(itemsPositions.Count);
@@ -451,9 +464,9 @@ public class InventoryComponent : MonoBehaviour
     {
         if(!isInventoryInfinite)
         {
-            inventoryHeight = newInventoryHeight;
+            inventoryHeight = newInventoryHeight<0 ? inventoryHeight : newInventoryHeight;
             initialInventoryHeight = inventoryHeight;
-            inventoryWidth = newInventoryWidth;
+            inventoryWidth = newInventoryWidth<0 ? inventoryWidth : newInventoryWidth;
 
             List<ItemStack> resizedItemsPositions = new List<ItemStack>();
             for(int i=0; i<inventoryWidth*inventoryHeight; i++)
@@ -469,6 +482,8 @@ public class InventoryComponent : MonoBehaviour
                 }
 
                 itemsPositions = resizedItemsPositions;
+
+                OnResizing?.Invoke();
                 return null;
             }
             else
@@ -484,6 +499,8 @@ public class InventoryComponent : MonoBehaviour
                     if(positionsSkipped+i>=resizedItemsPositions.Count)
                     {
                         itemsPositions = resizedItemsPositions;
+
+                        OnResizing?.Invoke();
                         return null;
                     }
                 }
@@ -496,6 +513,8 @@ public class InventoryComponent : MonoBehaviour
                 }
 
                 itemsPositions = resizedItemsPositions;
+
+                OnResizing?.Invoke();
                 return itemStacksRemoved;
             }
         }

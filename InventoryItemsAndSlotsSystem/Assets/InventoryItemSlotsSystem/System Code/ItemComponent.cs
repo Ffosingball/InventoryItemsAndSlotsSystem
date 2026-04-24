@@ -13,6 +13,9 @@ public class ItemComponent : MonoBehaviour
     [Header("Change only if items weight is enabled")]
     [SerializeField] private float itemWeight;
 
+    [Header("Change only if items stack limit is enabled")]
+    [SerializeField] private int itemStackLimit = 3;
+
     private InventoryConfiguration inventoryConfiguration;
 
     //Getters and setters
@@ -84,6 +87,16 @@ public class ItemComponent : MonoBehaviour
             if(inventoryConfiguration.useFiveTierRareness)
                 rareness = Rareness.Common;
         }
+    }
+
+    public void setItemStackLimit(int value)
+    {
+        itemStackLimit = value;
+    }
+
+    public int getItemStackLimit()
+    {
+        return itemStackLimit;
     }
 
 

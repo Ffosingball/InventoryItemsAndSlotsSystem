@@ -12,8 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8d45984825f1874e818d7b21179a0be, type: 3}
   m_Name: InventoryConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::InventoryConfiguration
-  useFiveTierRareness: 0
-  itemStacksLimit: 5
+  useFiveTierRareness: 1
+  itemStacksLimit: 0
   inventoryType: 0
-  arbitraryStackPlacement: 0
+  arbitraryStackPlacement: 1
   itemsHasAWeight: 0
+  selectionOutlineColor: {r: 0.8113208, g: 0.8113208, b: 0.8113208, a: 1}
+  selectionOutlineThikness: 6
+  commonItemColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  uncommonItemColor: {r: 0.32, g: 0.57, b: 0.29, a: 1}
+  rareItemColor: {r: 0.21, g: 0.43, b: 0.8, a: 1}
+  epicItemColor: {r: 0.68, g: 0.21, b: 0.8, a: 1}
+  legendaryItemColor: {r: 0.86, g: 0.61, b: 0.17, a: 1}
+  emptySlotColor: {r: 0.2971698, g: 0.2971698, b: 0.2971698, a: 1}
