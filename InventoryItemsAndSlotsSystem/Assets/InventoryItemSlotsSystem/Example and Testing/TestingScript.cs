@@ -279,4 +279,28 @@ public class TestingScript : MonoBehaviour
             Debug.Log(message);
         }
     }
+
+
+
+    public void ShowSortByRarenessDESC()
+    {
+        selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessDESCAfterByAmountASC,InventorySortingFunctions.addItemToSortedListByRarenessDESC);
+        inventoryManager.UpdateInventoryView(selectedInventory);
+    }
+
+
+
+    public void ShowSortByRarenessASC()
+    {
+        selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessASCAfterByAmountDESC,InventorySortingFunctions.addItemToSortedListByRarenessASC);
+        inventoryManager.UpdateInventoryView(selectedInventory);
+    }
+
+
+
+    public void CancelSorting()
+    {
+        selectedInventory.CancelShowSortedInventory();
+        inventoryManager.UpdateInventoryView(selectedInventory);
+    }
 }

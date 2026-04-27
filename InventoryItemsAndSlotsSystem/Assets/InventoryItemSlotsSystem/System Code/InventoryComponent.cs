@@ -16,15 +16,24 @@ public class InventoryComponent : MonoBehaviour
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
 
     private Dictionary<(string, Rareness), List<ItemStack>> itemsInTheInventory;
-    private List<ItemStack> itemsPositions;
+    private List<ItemStack> itemsPositions, sortedPositions;
     private int newInventoryWidth=-1, newInventoryHeight=-1, initialInventoryHeight;
     private int totalItems=0;
+    private bool showItemsSorted=false;
+    private Func<List<ItemStack>, List<ItemStack>> sortFunction;
+    private Action<ItemStack, List<ItemStack>> addToSortedFunction;
+    //private Action<ItemStack, List<ItemStack>> removeFromSortedFunction;
 
 
     //Getters and setters
     public bool IsInventoryInfinite()
     {
         return isInventoryInfinite;
+    }
+
+    public bool getShowItemsSorted()
+    {
+        return showItemsSorted;
     }
 
     public void setIsInventoryInfinite(bool value)
@@ -74,6 +83,11 @@ public class InventoryComponent : MonoBehaviour
         return itemsPositions;
     }
 
+    public List<ItemStack> getSortedListOfItems()
+    {
+        return sortedPositions;
+    }
+
     //public int getTotalItems()
     //{
     //    return totalItems;
@@ -112,68 +126,93 @@ public class InventoryComponent : MonoBehaviour
                 return placementResult;
             }
 
-            if(itemsPositions[arrPosition]!=null)
+            if(showItemsSorted)
             {
-                totalItems--;
-                if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
+                addToSortedFunction(itemStack, sortedPositions);
+
+                for(int i=0; i<itemsPositions.Count; i++)
                 {
-                    int overflow = itemStack.IncreaseAmountBy(itemsPositions[arrPosition].getNumOfItems());
-                    if(overflow>0)
+                    if(itemsPositions[i]==null)
                     {
-                        itemsPositions[arrPosition].DecreaseAmountBy(itemsPositions[arrPosition].getNumOfItems()-overflow);
-                        placementResult.stackReplaced = itemsPositions[arrPosition];
-                    }
-                }
-                else
-                {
-                    if(!inventoryConfiguration.itemStacksLimit)
-                        placementResult.stackReplaced = itemsPositions[arrPosition];
-                    else
-                    {
-                        if(itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
-                            placementResult.stackReplaced = itemsPositions[arrPosition];
+                        itemsPositions[i] = itemStack;
+                        itemStack.getCellsOccupied()[0]=i;
+
+                        if(!itemsInTheInventory.ContainsKey((itemStack.getItem().getItemName(),itemStack.getItem().getRareness())))
+                            itemsInTheInventory.Add((itemStack.getItem().getItemName(),itemStack.getItem().getRareness()), new List<ItemStack>());
+                        itemsInTheInventory[(itemStack.getItem().getItemName(),itemStack.getItem().getRareness())].Add(itemStack);
+
+                        return placementResult;
                     }
                 }
 
-                ItemComponent existingItem = itemsPositions[arrPosition].getItem();
-                itemsInTheInventory[(existingItem.getItemName(),existingItem.getRareness())].Remove(itemsPositions[arrPosition]);
-                if(itemsInTheInventory[(existingItem.getItemName(),existingItem.getRareness())].Count==0)
-                    itemsInTheInventory.Remove((existingItem.getItemName(),existingItem.getRareness()));
-            }
-
-
-            if(!inventoryConfiguration.itemStacksLimit || itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
-            {
-                ItemComponent newItem = itemStack.getItem();
-                if(!itemsInTheInventory.ContainsKey((newItem.getItemName(),newItem.getRareness())))
-                    itemsInTheInventory.Add((newItem.getItemName(),newItem.getRareness()), new List<ItemStack>());
-
-                itemStack.getCellsOccupied()[0]=arrPosition;
-
-                itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
-                itemsPositions[arrPosition] = itemStack;
-                totalItems++;
-                //Debug.Log(inventoryName+") "+totalItems);
-
-                if(isInventoryInfinite && (inventoryHeight*inventoryWidth)-totalItems<=1)
-                {
-                    //Debug.Log("Start Growing!");
-                    //itemsPositions.Add(null);
-
-                    for(int i=0; i<inventoryWidth; i++)
-                    {
-                        itemsPositions.Add(null);
-                    }
-                    inventoryHeight++;
-                    //Debug.Log(itemsPositions.Count);
-                }
-
+                placementResult.stackReplaced = itemStack;
                 return placementResult;
             }
             else
             {
-                placementResult.stackCapReached=true;
-                return placementResult;
+                if(itemsPositions[arrPosition]!=null)
+                {
+                    totalItems--;
+                    if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
+                    {
+                        int overflow = itemStack.IncreaseAmountBy(itemsPositions[arrPosition].getNumOfItems());
+                        if(overflow>0)
+                        {
+                            itemsPositions[arrPosition].DecreaseAmountBy(itemsPositions[arrPosition].getNumOfItems()-overflow);
+                            placementResult.stackReplaced = itemsPositions[arrPosition];
+                        }
+                    }
+                    else
+                    {
+                        if(!inventoryConfiguration.itemStacksLimit)
+                            placementResult.stackReplaced = itemsPositions[arrPosition];
+                        else
+                        {
+                            if(itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
+                                placementResult.stackReplaced = itemsPositions[arrPosition];
+                        }
+                    }
+
+                    ItemComponent existingItem = itemsPositions[arrPosition].getItem();
+                    itemsInTheInventory[(existingItem.getItemName(),existingItem.getRareness())].Remove(itemsPositions[arrPosition]);
+                    if(itemsInTheInventory[(existingItem.getItemName(),existingItem.getRareness())].Count==0)
+                        itemsInTheInventory.Remove((existingItem.getItemName(),existingItem.getRareness()));
+                }
+
+
+                if(!inventoryConfiguration.itemStacksLimit || itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
+                {
+                    ItemComponent newItem = itemStack.getItem();
+                    if(!itemsInTheInventory.ContainsKey((newItem.getItemName(),newItem.getRareness())))
+                        itemsInTheInventory.Add((newItem.getItemName(),newItem.getRareness()), new List<ItemStack>());
+
+                    itemStack.getCellsOccupied()[0]=arrPosition;
+
+                    itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
+                    itemsPositions[arrPosition] = itemStack;
+                    totalItems++;
+                    //Debug.Log(inventoryName+") "+totalItems);
+
+                    if(isInventoryInfinite && (inventoryHeight*inventoryWidth)-totalItems<=1)
+                    {
+                        //Debug.Log("Start Growing!");
+                        //itemsPositions.Add(null);
+
+                        for(int i=0; i<inventoryWidth; i++)
+                        {
+                            itemsPositions.Add(null);
+                        }
+                        inventoryHeight++;
+                        //Debug.Log(itemsPositions.Count);
+                    }
+
+                    return placementResult;
+                }
+                else
+                {
+                    placementResult.stackCapReached=true;
+                    return placementResult;
+                }
             }
         }
 
@@ -211,6 +250,9 @@ public class InventoryComponent : MonoBehaviour
                     ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
                     amount = newItemStack.IncreaseAmountBy(amount);
                     totalItems++;
+
+                    if(showItemsSorted)
+                        addToSortedFunction(newItemStack, sortedPositions);
 
                     itemsPositions[i] = newItemStack;
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
@@ -259,6 +301,9 @@ public class InventoryComponent : MonoBehaviour
                         ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, i);
                         amount = newItemStack.IncreaseAmountBy(amount);
                         totalItems++;
+
+                        if(showItemsSorted)
+                            addToSortedFunction(newItemStack, sortedPositions);
 
                         itemsPositions[i] = newItemStack;
                         itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
@@ -354,6 +399,12 @@ public class InventoryComponent : MonoBehaviour
 
                 if(amount>0)
                 {
+                    if(showItemsSorted)
+                    {
+                        sortedPositions.Remove(itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]);
+                        sortedPositions.Add(null);
+                    }
+
                     itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
                     totalItems--;
@@ -362,6 +413,12 @@ public class InventoryComponent : MonoBehaviour
                 {
                     if(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getNumOfItems()==0)
                     {
+                        if(showItemsSorted)
+                        {
+                            sortedPositions.Remove(itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]);
+                            sortedPositions.Add(null);
+                        }
+
                         itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
                         itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
                         totalItems--;
@@ -428,7 +485,10 @@ public class InventoryComponent : MonoBehaviour
             return null;
 
         //Debug.Log("Get pos: "+(position.y*inventoryWidth+position.x)+"; h: "+inventoryHeight+"; itPos.Count: "+itemsPositions.Count);
-        return itemsPositions[position.y*inventoryWidth+position.x];
+        if(showItemsSorted)
+            return sortedPositions[position.y*inventoryWidth+position.x];
+        else
+            return itemsPositions[position.y*inventoryWidth+position.x];
     }
 
 
@@ -436,10 +496,23 @@ public class InventoryComponent : MonoBehaviour
     {
         if(inventoryConfiguration.arbitraryStackPlacement)
         {
-            if(itemsPositions[position.y*inventoryWidth+position.x]!=null)
+            ItemStack stackToRemove;         
+            if(showItemsSorted)
             {
-                ItemStack stackToRemove = itemsPositions[position.y*inventoryWidth+position.x];
-                itemsPositions[position.y*inventoryWidth+position.x]=null;
+                stackToRemove = sortedPositions[position.y*inventoryWidth+position.x];
+                    
+                if(stackToRemove!=null)
+                {
+                    sortedPositions.Remove(stackToRemove);
+                    sortedPositions.Add(null);
+                }
+            }
+            else
+                stackToRemove = itemsPositions[position.y*inventoryWidth+position.x];
+                
+            if(stackToRemove!=null)
+            {
+                itemsPositions[stackToRemove.getCellsOccupied()[0]]=null;
                 itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
                 totalItems--;
 
@@ -483,6 +556,7 @@ public class InventoryComponent : MonoBehaviour
 
                 itemsPositions = resizedItemsPositions;
 
+                sortedPositions = sortFunction(itemsPositions);
                 OnResizing?.Invoke();
                 return null;
             }
@@ -500,6 +574,7 @@ public class InventoryComponent : MonoBehaviour
                     {
                         itemsPositions = resizedItemsPositions;
 
+                        sortedPositions = sortFunction(itemsPositions);
                         OnResizing?.Invoke();
                         return null;
                     }
@@ -514,11 +589,33 @@ public class InventoryComponent : MonoBehaviour
 
                 itemsPositions = resizedItemsPositions;
 
+                sortedPositions = sortFunction(itemsPositions);
                 OnResizing?.Invoke();
                 return itemStacksRemoved;
             }
         }
 
         return null;
+    }
+
+
+
+    public void ShowInventorySorted(Func<List<ItemStack>, List<ItemStack>> sortFunction, Action<ItemStack, List<ItemStack>> addToSortedListFunction)
+    {
+        this.sortFunction = sortFunction;
+        addToSortedFunction = addToSortedListFunction;
+        //removeFromSortedFunction = removeFromSortedListFunction;
+
+        sortedPositions = this.sortFunction(itemsPositions);
+        showItemsSorted = true;
+
+        //Debug.Log("sorted: "+sortedPositions.Count+"; unsorted: "+itemsPositions.Count);
+    }
+
+
+
+    public void CancelShowSortedInventory()
+    {
+        showItemsSorted = false;
     }
 }

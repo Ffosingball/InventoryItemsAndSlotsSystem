@@ -387,7 +387,11 @@ public class InventoryViewComponent : MonoBehaviour
             }
 
             //Debug.Log("Updating view!");
-            List<ItemStack> itemStacks = inventoryComponent.getItemsInTheInventory();
+            List<ItemStack> itemStacks;
+            if(inventoryComponent.getShowItemsSorted())
+                itemStacks = inventoryComponent.getSortedListOfItems();
+            else
+                itemStacks = inventoryComponent.getItemsInTheInventory();
             //Debug.Log("Length: "+itemStacks.Count);
 
             for(int i=0; i<itemStacks.Count; i++)
