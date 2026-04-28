@@ -215,6 +215,19 @@ public class InventoryViewComponent : MonoBehaviour
 
 
 
+    public void ChangeSlotBackgroundImage(Vector2Int position, Sprite backgroundSprite)
+    {
+        GameObject foundSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
+
+        if(foundSlot!=null)
+        {
+            Image slotBackground = foundSlot.GetComponent<Image>();
+            slotBackground.sprite = backgroundSprite;
+        }
+    }
+
+
+
     public void SetSlotOutline(Vector2Int position, Color outlineColor, float thikness)
     {
         GameObject foundSlot = content.transform.Find((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString()).gameObject;
@@ -392,6 +405,7 @@ public class InventoryViewComponent : MonoBehaviour
                 itemStacks = inventoryComponent.getSortedListOfItems();
             else
                 itemStacks = inventoryComponent.getItemsInTheInventory();
+            
             //Debug.Log("Length: "+itemStacks.Count);
 
             for(int i=0; i<itemStacks.Count; i++)

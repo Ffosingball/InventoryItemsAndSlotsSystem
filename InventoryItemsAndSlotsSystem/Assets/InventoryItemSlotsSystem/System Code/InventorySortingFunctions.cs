@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEditor.Experimental.GraphView;
@@ -7,11 +8,13 @@ public static class InventorySortingFunctions
 {
     public static List<ItemStack> sortInventoryByRarenessDESCAfterByAmountASC(List<ItemStack> unsortedList)
     {
+        //Debug.Log("DESC");
         List<ItemStack> sortedList = sortInventoryByRarenessASCAfterByAmountDESC(unsortedList);
 
         int endPosition = -1;
         for(int i=0; i<sortedList.Count; i++)
         {
+            //Debug.Log("i: "+i);
             if(sortedList[i]==null)
             {
                 endPosition=i-1;
@@ -19,17 +22,18 @@ public static class InventorySortingFunctions
             }
         }
 
-        if(endPosition!=-1)
-        {
-            for(int i=0; i<sortedList.Count; i++)
-            {
-                if(i>=endPosition-i)
-                    break;
+        if(endPosition==-1)
+            endPosition = sortedList.Count-1;
 
-                ItemStack itemStack = sortedList[i];
-                sortedList[i] = sortedList[endPosition-i];
-                sortedList[endPosition-i] = itemStack;
-            }
+        for(int i=0; i<sortedList.Count; i++)
+        {
+            if(i>=endPosition-i)
+                break;
+
+            //Debug.Log("Swap: "+i+" - "+(endPosition-i));
+            ItemStack itemStack = sortedList[i];
+            sortedList[i] = sortedList[endPosition-i];
+            sortedList[endPosition-i] = itemStack;
         }
 
         return sortedList;
@@ -39,6 +43,7 @@ public static class InventorySortingFunctions
 
     public static List<ItemStack> sortInventoryByRarenessASCAfterByAmountDESC(List<ItemStack> unsortedList)
     {
+        //Debug.Log("ASC");
         List<ItemStack> intermediateList = rarenessMergeSort(unsortedList, 0, unsortedList.Count-1);
 
         List<ItemStack> sortedList = new List<ItemStack>();
@@ -77,10 +82,12 @@ public static class InventorySortingFunctions
                 else if(i-start==1)
                     sortedList.Add(intermediateList[start]);
                 else
-                    Debug.Log("Unreachable message!");
+                    Debug.Log("Unreachable message! Start: "+start+"; i: "+i);
 
                 start = i;
-
+            }
+            else
+            {
                 if(intermediateList[i]==null)
                     break;
             }
@@ -359,12 +366,14 @@ public static class InventorySortingFunctions
             if(sortedList[i]==null)
             {
                 sortedList[i]=stackToInsert;
+                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
-            if((sortedList[i].getItem().getRareness()==stackToInsert.getItem().getRareness() && sortedList[i].getNumOfItems()>stackToInsert.getNumOfItems()) || sortedList[i].getItem().getRareness()<stackToInsert.getItem().getRareness())
+            if((sortedList[i].getItem().getRareness()==stackToInsert.getItem().getRareness() && sortedList[i].getNumOfItems()<stackToInsert.getNumOfItems()) || sortedList[i].getItem().getRareness()<stackToInsert.getItem().getRareness())
             {
                 sortedList.Insert(i, stackToInsert);
                 sortedList.RemoveAt(sortedList.Count-1);
+                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
         }
@@ -380,14 +389,59 @@ public static class InventorySortingFunctions
             if(sortedList[i]==null)
             {
                 sortedList[i]=stackToInsert;
+                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
 
-            if((sortedList[i].getItem().getRareness()==stackToInsert.getItem().getRareness() && sortedList[i].getNumOfItems()<stackToInsert.getNumOfItems()) || sortedList[i].getItem().getRareness()>stackToInsert.getItem().getRareness())
+            if((sortedList[i].getItem().getRareness()==stackToInsert.getItem().getRareness() && sortedList[i].getNumOfItems()>stackToInsert.getNumOfItems()) || sortedList[i].getItem().getRareness()>stackToInsert.getItem().getRareness())
             {
                 sortedList.Insert(i, stackToInsert);
                 sortedList.RemoveAt(sortedList.Count-1);
+                //Debug.Log("After insert: "+sortedList.Count);
                 break;
+            }
+        }
+    }
+
+
+    //Search function
+    public static List<ItemStack> LinearSearchByName(List<ItemStack> list, string targetPart)
+    {
+        List<ItemStack> searchResultList = new List<ItemStack>();
+
+        foreach(ItemStack stack in list)
+        {
+            if(stack!=null)
+            {
+                if(stack.getItem().getItemName().Contains(targetPart, StringComparison.OrdinalIgnoreCase))
+                {
+                    searchResultList.Add(stack);
+                }
+            }
+        }
+
+        while(searchResultList.Count<list.Count)
+        {
+            searchResultList.Add(null);
+        }
+
+        return searchResultList;
+    }
+
+
+
+    public static void addItemToSearchResultByName(ItemStack stackToInsert, List<ItemStack> searchList, string targetPart)
+    {
+        if(stackToInsert.getItem().getItemName().Contains(targetPart, StringComparison.OrdinalIgnoreCase))
+        {
+            for(int i=0; i<searchList.Count; i++)
+            {
+                if(searchList[i]==null)
+                {
+                    searchList[i]=stackToInsert;
+                    //Debug.Log("After insert: "+sortedList.Count);
+                    break;
+                }
             }
         }
     }

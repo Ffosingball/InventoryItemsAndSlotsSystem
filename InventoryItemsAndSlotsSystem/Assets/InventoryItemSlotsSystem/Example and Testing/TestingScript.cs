@@ -12,10 +12,14 @@ public class TestingScript : MonoBehaviour
     [SerializeField] private ItemComponent rock;
     [SerializeField] private ItemComponent knife;
     [SerializeField] private ItemComponent wood;
+    [SerializeField] private ItemComponent gun;
+    [SerializeField] private ItemComponent bucket;
+    [SerializeField] private ItemComponent grass;
     [SerializeField] private InventoryManager inventoryManager;
     [SerializeField] private TMP_Text amountText;
     [SerializeField] private TMP_Text numInStackText, itemNameText, itemTypeText, rarenessText, itemWeightText, itemStackLimitText;
     [SerializeField] private TMP_Text changeSizeByText;
+    [SerializeField] private TMP_InputField searchInput;
 
     private InventoryComponent selectedInventory;
     private ItemComponent selectedItem;
@@ -131,6 +135,15 @@ public class TestingScript : MonoBehaviour
                 break;
             case 4:
                 selectedItem = wood;
+                break;
+            case 5:
+                selectedItem = gun;
+                break;
+            case 6:
+                selectedItem = bucket;
+                break;
+            case 7:
+                selectedItem = grass;
                 break;
         }
     }
@@ -301,6 +314,14 @@ public class TestingScript : MonoBehaviour
     public void CancelSorting()
     {
         selectedInventory.CancelShowSortedInventory();
+        inventoryManager.UpdateInventoryView(selectedInventory);
+    }
+
+
+
+    public void SearchByName()
+    {
+        selectedInventory.SearchByNamePart(searchInput.text);
         inventoryManager.UpdateInventoryView(selectedInventory);
     }
 }
