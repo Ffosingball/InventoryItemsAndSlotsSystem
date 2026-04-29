@@ -20,6 +20,7 @@ public class TestingScript : MonoBehaviour
     [SerializeField] private TMP_Text numInStackText, itemNameText, itemTypeText, rarenessText, itemWeightText, itemStackLimitText;
     [SerializeField] private TMP_Text changeSizeByText;
     [SerializeField] private TMP_InputField searchInput;
+    [SerializeField] private TMP_Text totalItemsText, totalWeightText, inventoryNameText, inventorySizeText, isInfiniteText;
 
     private InventoryComponent selectedInventory;
     private ItemComponent selectedItem;
@@ -39,7 +40,6 @@ public class TestingScript : MonoBehaviour
     void Update()
     {
         ItemStack selectedStack = inventoryManager.getSelectedItemStack();
-
         if(selectedStack!=null)
         {
             ItemComponent selectedItem = selectedStack.getItem();
@@ -97,6 +97,24 @@ public class TestingScript : MonoBehaviour
             itemWeightText.text = "";
             itemStackLimitText.text = "";
         }
+
+        InventoryComponent selectedInventory = inventoryManager.getSelectedInventory();
+        if(selectedInventory!=null)
+        {
+            totalItemsText.text = selectedInventory.getNumOfItemsInTheInventory()+"/"+selectedInventory.getInventorySize();
+            totalWeightText.text = selectedInventory.GetTotalItemsWeight()+"/"+selectedInventory.getInventoryWeightLimit();
+            inventoryNameText.text = selectedInventory.getInventoryName();
+            inventorySizeText.text = selectedInventory.getInventoryWidth()+"x"+selectedInventory.getInventoryHeight();
+            isInfiniteText.text = selectedInventory.IsInventoryInfinite() ? "True" : "False";
+        }
+        else
+        {
+            totalItemsText.text = "";
+            totalWeightText.text = "";
+            inventoryNameText.text = "";
+            inventorySizeText.text = "";
+            isInfiniteText.text = "";
+        }
     }
 
 
@@ -152,13 +170,13 @@ public class TestingScript : MonoBehaviour
     public void OpenInventory()
     {
         if(selectedInventory==inventory1)
-            inventoryManager.OpenInventory(selectedInventory,new Vector2(0.4f, 0.4f),new Vector2(0.25f, 0.25f));
+            inventoryManager.OpenInventory(selectedInventory, new Vector2(0.25f, 0.25f));
 
         if(selectedInventory==inventory2)
-            inventoryManager.OpenInventory(selectedInventory,new Vector2(0.4f, 0.4f),new Vector2(0.75f, 0.25f));
+            inventoryManager.OpenInventory(selectedInventory, new Vector2(0.75f, 0.25f));
 
         if(selectedInventory==inventory3)
-            inventoryManager.OpenInventory(selectedInventory,new Vector2(0.4f, 0.4f),new Vector2(0.75f, 0.75f));
+            inventoryManager.OpenInventory(selectedInventory, new Vector2(0.75f, 0.75f));
     }
 
 

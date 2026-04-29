@@ -177,6 +177,12 @@ public class InventoryManager : MonoBehaviour
                     {
                         Debug.Log("Stack cap reached! Cannot insert more items of this type!");
                     }
+                    else if(placementResult.weightLimitReached)
+                    {
+                        Debug.Log("Weight limit reached! Cannot insert more items!");
+                        mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
+                        mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
+                    }
                     else if(placementResult.stackReplaced!=null)
                     {
                         pickedByMouse = placementResult.stackReplaced;
@@ -217,7 +223,7 @@ public class InventoryManager : MonoBehaviour
                     if(selectedItemStack==null)
                         return;
                     
-                    ItemStack itemStackToDivide = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
+                    //ItemStack itemStackToDivide = inventoryOverWhichMouseIs.GetItemStackByPosition(slotPosition);
                     //inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
                     itemPickedAt = inventoryOverWhichMouseIs;
 
@@ -225,12 +231,15 @@ public class InventoryManager : MonoBehaviour
                     {
                         pickedByMouse = new ItemStack(selectedItemStack.getItem(),inventoryConfiguration,-1);
                         pickedByMouse.IncreaseAmountBy(selectedItemStack.getNumOfItems()/2);
+
                         selectedItemStack.DecreaseAmountBy(pickedByMouse.getNumOfItems());
+                        inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                        inventoryOverWhichMouseIs.PlaceItemStackToInventory(selectedItemStack, slotPosition);
                     }
                     else
                     {
                         pickedByMouse = selectedItemStack;
-                        selectedItemStack = null;
+                        //selectedItemStack = null;
                         inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
                     }
 
@@ -249,6 +258,8 @@ public class InventoryManager : MonoBehaviour
                             NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(newStack, slotPosition);
                             if(placementResult.stackCapReached)
                                 Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                            else if(placementResult.weightLimitReached)
+                                Debug.Log("Weight limit reached! Cannot insert more items!");
                             else
                                 pickedByMouse.DecreaseAmountBy(1);
 
@@ -260,6 +271,8 @@ public class InventoryManager : MonoBehaviour
                             NewItemPlacementResult placementResult = inventoryOverWhichMouseIs.PlaceItemStackToInventory(pickedByMouse, slotPosition);
                             if(placementResult.stackCapReached)
                                 Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                            else if(placementResult.weightLimitReached)
+                                Debug.Log("Weight limit reached! Cannot insert more items!");
                             else
                             {
                                 pickedByMouse = null;
@@ -279,7 +292,7 @@ public class InventoryManager : MonoBehaviour
 
 
     // Size and position should be from 0 to 1 
-    public void OpenInventory(InventoryComponent inventoryComponent, Vector2 size, Vector2 position)
+    public void OpenInventory(InventoryComponent inventoryComponent, Vector2 position)
     {
         if(GetViewOfTheInventory(inventoryComponent)==null)
         {

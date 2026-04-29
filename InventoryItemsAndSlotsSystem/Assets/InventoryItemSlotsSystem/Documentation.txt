@@ -1,0 +1,6 @@
+ItemComponent.cs
+-each item should have a unique name
+
+InventoryComponent.cs
+-all slot positions in the inventory starts from (0,0) top-left corner
+-For your custom add function the length of the sortedList should remain the same before and after this function!

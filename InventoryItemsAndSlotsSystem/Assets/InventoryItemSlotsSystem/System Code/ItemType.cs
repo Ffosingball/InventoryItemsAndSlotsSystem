@@ -37,4 +37,5 @@ public class NewItemPlacementResult
     public ItemStack stackReplaced=null;
     public bool invalidPosition=false;
     public bool stackCapReached=false;
+    public bool weightLimitReached=false;
 }

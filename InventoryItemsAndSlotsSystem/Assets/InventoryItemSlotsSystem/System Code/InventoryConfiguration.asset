@@ -16,7 +16,7 @@ MonoBehaviour:
   itemStacksLimit: 0
   inventoryType: 0
   arbitraryStackPlacement: 1
-  itemsHasAWeight: 0
+  itemsHasAWeight: 1
   selectionOutlineColor: {r: 0.8113208, g: 0.8113208, b: 0.8113208, a: 1}
   selectionOutlineThikness: 6
   commonItemColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
