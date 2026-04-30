@@ -4,3 +4,13 @@ ItemComponent.cs
 InventoryComponent.cs
 -all slot positions in the inventory starts from (0,0) top-left corner
 -For your custom add function the length of the sortedList should remain the same before and after this function!
+
+InventoryManager.cs
+-only one inventory manager in the scene!
+
+InventoryViewComponent.cs
+-you can change how slot is selected at the SelectSlot method, but then you have to update DeselctSlot as well
+-you can change how to indicate rareness of the item in the IndicateItemRareness method
+
+ItemComponent.cs
+-each distinct item should have unique name!

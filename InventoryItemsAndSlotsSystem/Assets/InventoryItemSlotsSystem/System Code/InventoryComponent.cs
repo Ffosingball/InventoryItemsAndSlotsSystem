@@ -93,6 +93,11 @@ public class InventoryComponent : MonoBehaviour
         inventoryConfiguration = configuration;
     }
 
+    public InventoryConfiguration getInventoryConfiguration()
+    {
+        return inventoryConfiguration;
+    }
+
     public List<ItemStack> getItemsInTheInventory()
     {
         return itemsPositions;
@@ -219,14 +224,14 @@ public class InventoryComponent : MonoBehaviour
                     if(overflow>0)
                     {
                         removeItem = true;
-                        totalItemsWeight-=(itemsPositions[arrPosition].getNumOfItems()-overflow)*itemsPositions[arrPosition].getItem().getItemWeight();
                         itemsPositions[arrPosition].DecreaseAmountBy(itemsPositions[arrPosition].getNumOfItems()-overflow);
+                        totalItemsWeight-=itemsPositions[arrPosition].getTotalWeight();
                         placementResult.stackReplaced = itemsPositions[arrPosition];
                     }
                     else
                     {
                         totalItems--;
-                        totalItemsWeight-=itemsPositions[arrPosition].getNumOfItems()*itemsPositions[arrPosition].getItem().getItemWeight();
+                        totalItemsWeight-=itemsPositions[arrPosition].getTotalWeight();
                     }
                 }
                 else
@@ -254,14 +259,14 @@ public class InventoryComponent : MonoBehaviour
                 if(removeItem)
                 {
                     //Check if weight limit reached if applicable
-                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight-(placementResult.stackReplaced.getNumOfItems()*placementResult.stackReplaced.getItem().getItemWeight())+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>inventoryWeightLimit)
+                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight-placementResult.stackReplaced.getTotalWeight()+itemStack.getTotalWeight()>inventoryWeightLimit)
                     {
                         placementResult.weightLimitReached = true;
                         return placementResult;
                     }
 
                     totalItems--;
-                    totalItemsWeight-=placementResult.stackReplaced.getNumOfItems()*placementResult.stackReplaced.getItem().getItemWeight();
+                    totalItemsWeight-=placementResult.stackReplaced.getTotalWeight();
 
                     //if sorting inventory is on then remove replaced stack from the sorted list
                     if(showItemsSorted)
@@ -280,9 +285,9 @@ public class InventoryComponent : MonoBehaviour
             else
             {
                 //Check if weight limit reached if applicable
-                if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>inventoryWeightLimit)
+                if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+itemStack.getTotalWeight()>inventoryWeightLimit)
                 {
-                    int addAmount = itemStack.getNumOfItems()-(int)((totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())-inventoryWeightLimit)/itemStack.getItem().getItemWeight());
+                    int addAmount = itemStack.getNumOfItems()-(int)((totalItemsWeight+itemStack.getTotalWeight()-inventoryWeightLimit)/itemStack.getItem().getItemWeight());
                     Debug.Log("Add amount: "+addAmount);
                     if(addAmount>0)
                     {
@@ -316,7 +321,7 @@ public class InventoryComponent : MonoBehaviour
                 itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
                 itemsPositions[arrPosition] = itemStack;
                 totalItems++;
-                totalItemsWeight+=itemStack.getNumOfItems()*itemStack.getItem().getItemWeight();
+                totalItemsWeight+=itemStack.getTotalWeight();
 
                 //Check if inventory is infinite and no free slots is left than add 
                 //new row of empty slots
@@ -364,9 +369,9 @@ public class InventoryComponent : MonoBehaviour
             {
                 if(!itemStack.getIsFull())
                 {
-                    totalItemsWeight-=item.getItemWeight()*itemStack.getNumOfItems();
+                    totalItemsWeight-=itemStack.getTotalWeight();
                     amount = itemStack.IncreaseAmountBy(amount);
-                    totalItemsWeight+=item.getItemWeight()*itemStack.getNumOfItems();
+                    totalItemsWeight+=itemStack.getTotalWeight();
                     
                     //Change position of this stack in the sorted list, as its 
                     //amount of items has changed
@@ -490,7 +495,7 @@ public class InventoryComponent : MonoBehaviour
             ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, arrPosition);
             amount = newItemStack.IncreaseAmountBy(amount);
             totalItems++;
-            totalItemsWeight+=newItemStack.getNumOfItems()*item.getItemWeight();
+            totalItemsWeight+=newItemStack.getTotalWeight();
 
             if(showItemsSorted)
                 addToSortedFunction(newItemStack, sortedPositions);
@@ -619,7 +624,7 @@ public class InventoryComponent : MonoBehaviour
                         sortedPositions.Add(null);
                     }
 
-                    totalItemsWeight-=itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]].getNumOfItems()*itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]].getItem().getItemWeight();
+                    totalItemsWeight-=itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]].getTotalWeight();
                     itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
                     totalItems--;
@@ -740,7 +745,7 @@ public class InventoryComponent : MonoBehaviour
             //If slot at the given position not null then delete itemStack at that slot
             if(stackToRemove!=null)
             {
-                totalItemsWeight-=itemsPositions[stackToRemove.getCellsOccupied()[0]].getNumOfItems()*itemsPositions[stackToRemove.getCellsOccupied()[0]].getItem().getItemWeight();
+                totalItemsWeight-=itemsPositions[stackToRemove.getCellsOccupied()[0]].getTotalWeight();
                 itemsPositions[stackToRemove.getCellsOccupied()[0]]=null;
                 itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
                 totalItems--;

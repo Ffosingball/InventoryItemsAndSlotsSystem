@@ -1,8 +1,12 @@
 using UnityEngine;
 
+
+//This component stores information about items
 public class ItemComponent : MonoBehaviour
 {
+    //Stack cap
     [SerializeField] private int maxNumberOfBlocksInAStack;
+    [Tooltip("Each distinct item should have unique name")]
     [SerializeField] private string itemName;
     [SerializeField] private ItemType itemType;
     [SerializeField] private Sprite picture;
@@ -11,9 +15,11 @@ public class ItemComponent : MonoBehaviour
     [SerializeField] private Rareness rareness = Rareness.None;
 
     [Header("Change only if items weight is enabled")]
+    [Tooltip("Cannot be less than 0!")]
     [SerializeField] private float itemWeight;
 
     [Header("Change only if items stack limit is enabled")]
+    [Tooltip("Cannot be less then 0!")]
     [SerializeField] private int itemStackLimit = 3;
 
     private InventoryConfiguration inventoryConfiguration;
@@ -81,11 +87,13 @@ public class ItemComponent : MonoBehaviour
 
     public void setInventoryConfiguration(InventoryConfiguration inventoryConfiguration)
     {
-        if(this.inventoryConfiguration==null)
+        this.inventoryConfiguration = inventoryConfiguration;
+        if(this.inventoryConfiguration!=null)
         {        
-            this.inventoryConfiguration = inventoryConfiguration;
-            if(inventoryConfiguration.useFiveTierRareness)
+            if(inventoryConfiguration.useFiveTierRareness && rareness==Rareness.None)
                 rareness = Rareness.Common;
+            else if(!inventoryConfiguration.useFiveTierRareness && rareness!=Rareness.None)
+                rareness = Rareness.None;
         }
     }
 
@@ -103,6 +111,7 @@ public class ItemComponent : MonoBehaviour
 
     private void Start()
     {
+        //Initialize item
         if(itemName==null)
             itemName = System.Guid.NewGuid().ToString();
 

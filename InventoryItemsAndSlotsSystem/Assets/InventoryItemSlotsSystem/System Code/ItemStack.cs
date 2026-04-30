@@ -1,13 +1,19 @@
 using System.Collections.Generic;
-using UnityEngine;
 
+
+//This class simulates a single stack of item in the inventoryComponent
 public class ItemStack
 {
+    //How many items in the stack
     private int numOfItems=0;
+    //Total weight of the stack
     private float totalWeight=0f;
+    //The item of the stack
     private ItemComponent item;
+    //List of slot positions which are occupied in the inventory
     private List<int> cellsOccupied;
     private InventoryConfiguration inventoryConfiguration;
+    //Is stack full or not
     private bool isFull=false;
 
     //Getters and setters
@@ -61,6 +67,7 @@ public class ItemStack
     }
 
 
+    //This method increases stack amount
     //If returns -1 it means failed, 0 suceeded, more than 0 amount left to add into new stack
     public int IncreaseAmountBy(int amount)
     {
@@ -90,6 +97,7 @@ public class ItemStack
     }
 
 
+    //This method decreases stack amount
     //If returns -1 it means failed, 0 suceeded, more than 0 amount left to decrease in other stacks
     public int DecreaseAmountBy(int amount)
     {
@@ -101,6 +109,8 @@ public class ItemStack
 
         if(numOfItems<0)
         {
+            if(inventoryConfiguration.itemsHasAWeight)
+                totalWeight = 0;
             return -numOfItems;
         }
         else

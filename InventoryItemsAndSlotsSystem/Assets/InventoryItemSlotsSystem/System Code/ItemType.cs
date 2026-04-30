@@ -1,3 +1,4 @@
+//You can change item types here
 public enum ItemType
 {
     Weapon,
@@ -8,6 +9,7 @@ public enum ItemType
 }
 
 
+//You can change rareness ranks here
 public enum Rareness
 {
     Common,

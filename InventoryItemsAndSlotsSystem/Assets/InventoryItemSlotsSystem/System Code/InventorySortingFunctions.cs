@@ -1,20 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
+
+//This is a place where you can place your custom sorting and/or search functions for the 
+//inventoryComponent
 public static class InventorySortingFunctions
 {
+    //This method just calls sortInventoryByRarenessASCAfterByAmountDESC method
+    //and reverses its result
     public static List<ItemStack> sortInventoryByRarenessDESCAfterByAmountASC(List<ItemStack> unsortedList)
     {
-        //Debug.Log("DESC");
         List<ItemStack> sortedList = sortInventoryByRarenessASCAfterByAmountDESC(unsortedList);
 
         int endPosition = -1;
         for(int i=0; i<sortedList.Count; i++)
         {
-            //Debug.Log("i: "+i);
             if(sortedList[i]==null)
             {
                 endPosition=i-1;
@@ -30,7 +31,6 @@ public static class InventorySortingFunctions
             if(i>=endPosition-i)
                 break;
 
-            //Debug.Log("Swap: "+i+" - "+(endPosition-i));
             ItemStack itemStack = sortedList[i];
             sortedList[i] = sortedList[endPosition-i];
             sortedList[endPosition-i] = itemStack;
@@ -41,9 +41,10 @@ public static class InventorySortingFunctions
 
 
 
+    //This method sorts all items in the inventory by rareness ascending and in each
+    //rareness category by amount of items descending
     public static List<ItemStack> sortInventoryByRarenessASCAfterByAmountDESC(List<ItemStack> unsortedList)
     {
-        //Debug.Log("ASC");
         List<ItemStack> intermediateList = rarenessMergeSort(unsortedList, 0, unsortedList.Count-1);
 
         List<ItemStack> sortedList = new List<ItemStack>();
@@ -104,6 +105,8 @@ public static class InventorySortingFunctions
     }
 
 
+
+    //Recursive merge sort by rareness
     private static List<ItemStack> rarenessMergeSort(List<ItemStack> unsortedList, int start, int end)
     {
         List<ItemStack> sortedList = new List<ItemStack>();
@@ -228,8 +231,7 @@ public static class InventorySortingFunctions
 
 
 
-
-
+    //Recursive merge sort by amount
     private static List<ItemStack> itemAmountMergeSort(List<ItemStack> unsortedList, int start, int end)
     {
         List<ItemStack> sortedList = new List<ItemStack>();
@@ -349,16 +351,12 @@ public static class InventorySortingFunctions
             }
         }
 
-        /*Debug.Log("Start: "+start+"; end: "+end);
-        foreach(ItemStack stack in sortedList)
-        {
-            Debug.Log("Num: "+stack.getNumOfItems());
-        }*/
-
         return sortedList;
     }
 
 
+
+    //This method adds item to already sorted list
     public static void addItemToSortedListByRarenessDESC(ItemStack stackToInsert, List<ItemStack> sortedList)
     {
         for(int i=0; i<sortedList.Count; i++)
@@ -366,14 +364,12 @@ public static class InventorySortingFunctions
             if(sortedList[i]==null)
             {
                 sortedList[i]=stackToInsert;
-                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
             if((sortedList[i].getItem().getRareness()==stackToInsert.getItem().getRareness() && sortedList[i].getNumOfItems()<stackToInsert.getNumOfItems()) || sortedList[i].getItem().getRareness()<stackToInsert.getItem().getRareness())
             {
                 sortedList.Insert(i, stackToInsert);
                 sortedList.RemoveAt(sortedList.Count-1);
-                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
         }
@@ -381,7 +377,7 @@ public static class InventorySortingFunctions
 
 
 
-
+    //This method adds item to already sorted list
     public static void addItemToSortedListByRarenessASC(ItemStack stackToInsert, List<ItemStack> sortedList)
     {
         for(int i=0; i<sortedList.Count; i++)
@@ -389,7 +385,6 @@ public static class InventorySortingFunctions
             if(sortedList[i]==null)
             {
                 sortedList[i]=stackToInsert;
-                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
 
@@ -397,14 +392,13 @@ public static class InventorySortingFunctions
             {
                 sortedList.Insert(i, stackToInsert);
                 sortedList.RemoveAt(sortedList.Count-1);
-                //Debug.Log("After insert: "+sortedList.Count);
                 break;
             }
         }
     }
 
 
-    //Search function
+    //Search method by substring in the item name
     public static List<ItemStack> LinearSearchByName(List<ItemStack> list, string targetPart)
     {
         List<ItemStack> searchResultList = new List<ItemStack>();
@@ -430,6 +424,7 @@ public static class InventorySortingFunctions
 
 
 
+    //This method adds item to the search result list
     public static void addItemToSearchResultByName(ItemStack stackToInsert, List<ItemStack> searchList, string targetPart)
     {
         if(stackToInsert.getItem().getItemName().Contains(targetPart, StringComparison.OrdinalIgnoreCase))
@@ -439,7 +434,6 @@ public static class InventorySortingFunctions
                 if(searchList[i]==null)
                 {
                     searchList[i]=stackToInsert;
-                    //Debug.Log("After insert: "+sortedList.Count);
                     break;
                 }
             }
