@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 using TMPro;
-using System.ComponentModel.Design;
 using System;
 
 
@@ -217,7 +216,7 @@ public class InventoryManager : MonoBehaviour
                 }
 
                 //Update view of this inventory
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+                //GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
             }
         }
     }
@@ -316,7 +315,7 @@ public class InventoryManager : MonoBehaviour
                 }
 
                 //Update view
-                GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
+                //GetViewOfTheInventory(inventoryOverWhichMouseIs).UpdateView();
             }
         }
     }

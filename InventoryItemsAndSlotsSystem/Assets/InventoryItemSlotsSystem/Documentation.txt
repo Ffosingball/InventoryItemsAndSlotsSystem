@@ -1,16 +1,169 @@
-ItemComponent.cs
--each item should have a unique name
+In other projects you need to use only the following components:
+  - InventoryComponent
+  - InventoryConfiguration
+  - InventoryManager
+  - ItemComponent
+If you want to change some some properties of the inventory and/ot items, or ui of the inventory then you can change some code in:
+  - InventoryViewComponent
+  - InventorySortingFunctions
+  - ItemType.cs
+  - ItemStack
+The last one is InventorySlotComponent is purely technic.
 
-InventoryComponent.cs
--all slot positions in the inventory starts from (0,0) top-left corner
--For your custom add function the length of the sortedList should remain the same before and after this function!
+To start using this system create an inventoryComponent gameObject, this will simulate your inventory, or items slot grid (like in Factorio), a list of badges or cards (like in Hogwarts legacy) etc. depending on the configuration you set in the inventoryConfiguration object. After you can add itemComponent to any gameObject which you want be able to be placed in the inventory. After create inventoryManager object, there should be just one inventoryManager for the whole game! After if you want to interact with inventory in the UI open this inventoryComponent through inventoryManager when you will change something in the inventory its view will be updated automatically. InventoryManager already provides some basic interaction with inventory UI: left mouse click and right mouse click, if you want you can add more interactions or change the existing one.
+I recommend you to create prefabs of your different types of inventories and of all your items.
+Below is a short overview of all components in my system. More details you can find in the comments for those components and their methods
 
-InventoryManager.cs
--only one inventory manager in the scene!
 
-InventoryViewComponent.cs
--you can change how slot is selected at the SelectSlot method, but then you have to update DeselctSlot as well
--you can change how to indicate rareness of the item in the IndicateItemRareness method
 
-ItemComponent.cs
--each distinct item should have unique name!
+
+1. ItemComponent stores information about items, each distinct item should have a unique name
+
+Getters and setters:
+int getMaxNumberOfBlocksInAStack()
+void setMaxNumberOfBlocksInAStack(int value)
+float getItemWeight()
+void setItemWeight(float value)
+Rareness getRareness()
+void setRareness(Rareness rareness)
+string getItemName()
+void setItemName(string itemName)
+ItemType getItemType()
+void setItemType(ItemType itemType)
+Sprite getPicture()
+void setPicture(Sprite picture)
+void setInventoryConfiguration(InventoryConfiguration inventoryConfiguration)
+void setItemStackLimit(int value)
+int getItemStackLimit()
+
+
+
+2. InventoryConfiguration stores information how inventory should behave and how it's UI should be drawn in the inventoryComponent
+
+
+
+3. InventoryComponent is a component which represent the inventory itself, it has a list of slots which may or may not contain items. All slot positions in the inventory starts from (0,0) top-left corner. For your custom add function, the length of the sortedList should remain the same before and after your function! You can have your pass your custom sort functions and sort inventory however you wish!
+
+Getters and setters:
+bool IsInventoryInfinite()
+bool getShowItemsSorted()
+void setIsInventoryInfinite(bool value)
+int getInventoryWidth()
+void setInventoryHeight(int value)
+int getInventoryHeight()
+void setInventoryWidth(int value)
+string getInventoryName()
+void setInventoryName(string value)
+void setInventoryConfiguration(InventoryConfiguration configuration)
+InventoryConfiguration getInventoryConfiguration()
+List<ItemStack> getItemsInTheInventory()
+List<ItemStack> getSortedListOfItems()
+float GetTotalItemsWeight()
+int getInventorySize()
+float getInventoryWeightLimit()
+void setInventoryWeightLimit(int value)
+int getNumOfItemsInTheInventory()
+
+Public methods:
+NewItemPlacementResult PlaceItemStackToInventory(ItemStack itemStack, Vector2Int position)
+int AddItemsToInventory(ItemComponent item, int amount)
+bool RemoveItemsFromInventory(ItemComponent item, int amount)
+int GetTotalAmountOfThisItem(ItemComponent item)
+int GetNumberOfStacksOfThisItem(ItemComponent item)
+bool ContainsItem(ItemComponent item)
+ItemStack GetItemStackByPosition(Vector2Int position)
+void RemoveItemStackByPosition(Vector2Int position)
+List<ItemStack> ResizeInventory()
+void ShowInventorySorted(Func<List<ItemStack>, List<ItemStack>> sortFunction, Action<ItemStack, List<ItemStack>> addToSortedListFunction)
+void CancelShowSortedInventory()
+void SearchByNamePart(string namePart)
+
+
+
+4. InventoryManager is component which manages interaction between inventories and player. Only one inventory manager in the scene! Important that itemStack picked by mouse from the inventory is visualized by using mouseIcon which inventoryManager always moves with the mouse. Also inventoryManager always knows over wich inventoryView and over which slot the mouse is
+
+Getters and setters:
+ItemStack getSelectedItemStack()
+InventoryComponent getSelectedInventory()
+
+Public methods:
+void LeftMouseClick()
+void RightMouseClick()
+void OpenInventory(InventoryComponent inventoryComponent, Vector2 position)
+void CloseInventory(InventoryComponent inventoryComponent)
+void UpdateInventoryView(InventoryComponent inventoryComponent)
+
+
+
+5. InventoryViewComponent is component which visualizes provided inventoryComponent in the game UI by the rules described in the inventoryComponent's inventoryConfiguration. You can change how slot is selected at the SelectSlot method, but then you have to update DeselctSlot as well. You can change how to indicate rareness of the item in the IndicateItemRareness method. IMPORTANT this inventoryViewComponent has to be placed in the ScrollView UI gameObject!
+
+Getters and setters:
+InventoryComponent getInventoryComponent()
+void setInventoryComponent(InventoryComponent value)
+void setInventoryConfiguration(InventoryConfiguration value)
+InventoryConfiguration getInventoryConfiguration()
+float getViewWidth()
+float getViewHeight()
+void setInventorySlot(GameObject value)
+Vector2 getPosition()
+void setPosition(Vector2 value)
+bool getIsViewCreated()
+
+Public methods:
+void CreateView()
+void DeleteView()
+void HideView()
+void ShowView()
+void ChangeSlotBackgroundColor(Vector2Int position, Color backgroundColor)
+void ChangeSlotBackgroundImage(Vector2Int position, Sprite backgroundSprite)
+void SetSlotOutline(Vector2Int position, Color outlineColor, float thikness)
+void RemoveSlotOutline(Vector2Int position)
+bool SelectSlot(Vector2Int position)
+bool DeselectSlot()
+bool UpdateView()
+
+
+
+6. InventorySortingFunctions is static class which stores all sorting functions for the inventoryComponent. Below is a list of available functions:
+
+List<ItemStack> sortInventoryByRarenessDESCAfterByAmountASC(List<ItemStack> unsortedList)
+List<ItemStack> sortInventoryByRarenessASCAfterByAmountDESC(List<ItemStack> unsortedList)
+List<ItemStack> LinearSearchByName(List<ItemStack> list, string targetPart)
+void addItemToSortedListByRarenessDESC(ItemStack stackToInsert, List<ItemStack> sortedList)
+void addItemToSortedListByRarenessASC(ItemStack stackToInsert, List<ItemStack> sortedList)
+void addItemToSearchResultByName(ItemStack stackToInsert, List<ItemStack> searchList, string targetPart)
+
+
+
+7. ItemType is Enum of item types
+8. Rareness is Enum of all rareness ranks of the item
+9. InventoryType is Enum of how items are represented in the inventory grid
+10. NewItemPlacementResult is a result of placing itemStack at specified location in the inventoryComponent
+
+
+
+11. ItemStack is a class which represents a single stack of items in the slot in the inventory
+
+Getters and setters:
+int getNumOfItems()
+float getTotalWeight()
+ItemComponent getItem()
+bool getIsFull()
+List<int> getCellsOccupied()
+void setCellsOccupied(List<int> cellsOccupied)
+
+Constructors:
+ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration, int cellOccupied)
+ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration, List<int> cellsOccupied)
+
+Public methods:
+int IncreaseAmountBy(int amount)
+int DecreaseAmountBy(int amount)
+
+
+
+12. InventorySlotComponent is component which just exists to tell that gameobject is inventorySlot!
+
+Getters and setters:
+Vector2Int getPosition()
+void setPosition(Vector2Int pos)

@@ -9,8 +9,8 @@ using UnityEditor.Experimental.GraphView;
 //may or may not contain items
 public class InventoryComponent : MonoBehaviour
 {
-    //When inventory resized update its UI if it is opened!
-    public event Action OnResizing;
+    //When anything is changed in the inventory it will change view as well
+    public event Action OnChangeUpdateView;
 
     [Tooltip("If inventoryInfinite is true it will add new row of slots to the inventory when there no free slot is left")]
     [SerializeField] private bool isInventoryInfinite = false;
@@ -167,6 +167,7 @@ public class InventoryComponent : MonoBehaviour
             if(itemsPositions.Count<=arrPosition || arrPosition<0)
             {
                 placementResult.invalidPosition=true;
+                OnChangeUpdateView?.Invoke();
                 return placementResult;
             }
 
@@ -214,6 +215,7 @@ public class InventoryComponent : MonoBehaviour
                         totalItemsWeight += addAmount*itemStack.getItem().getItemWeight();
                         itemStack.DecreaseAmountBy(addAmount);
                         placementResult.weightLimitReached = true;
+                        OnChangeUpdateView?.Invoke();
                         return placementResult;
                     }
 
@@ -262,6 +264,7 @@ public class InventoryComponent : MonoBehaviour
                     if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight-placementResult.stackReplaced.getTotalWeight()+itemStack.getTotalWeight()>inventoryWeightLimit)
                     {
                         placementResult.weightLimitReached = true;
+                        OnChangeUpdateView?.Invoke();
                         return placementResult;
                     }
 
@@ -288,7 +291,6 @@ public class InventoryComponent : MonoBehaviour
                 if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+itemStack.getTotalWeight()>inventoryWeightLimit)
                 {
                     int addAmount = itemStack.getNumOfItems()-(int)((totalItemsWeight+itemStack.getTotalWeight()-inventoryWeightLimit)/itemStack.getItem().getItemWeight());
-                    Debug.Log("Add amount: "+addAmount);
                     if(addAmount>0)
                     {
                         ItemStack newItemStack = new ItemStack(itemStack.getItem(),inventoryConfiguration,-1);
@@ -301,6 +303,7 @@ public class InventoryComponent : MonoBehaviour
                     else
                     {
                         placementResult.weightLimitReached = true;
+                        OnChangeUpdateView?.Invoke();
                         return placementResult;
                     }
                 }
@@ -336,12 +339,14 @@ public class InventoryComponent : MonoBehaviour
                     inventoryHeight++;
                 }
 
+                OnChangeUpdateView?.Invoke();
                 return placementResult;
             }
             else
             {
                 //Otherwise return failure
                 placementResult.stackCapReached=true;
+                OnChangeUpdateView?.Invoke();
                 return placementResult;
             }
         }
@@ -388,11 +393,15 @@ public class InventoryComponent : MonoBehaviour
                         int itemsToRemove = (int)((totalItemsWeight-inventoryWeightLimit)/item.getItemWeight());
                         itemStack.DecreaseAmountBy(itemsToRemove);
                         totalItemsWeight-=item.getItemWeight()*itemsToRemove;
+                        OnChangeUpdateView?.Invoke();
                         return amount+itemsToRemove;
                     }
 
                     if(amount<=0)
+                    {
+                        OnChangeUpdateView?.Invoke();
                         return 0;
+                    }
                 }
             }
         }
@@ -409,12 +418,19 @@ public class InventoryComponent : MonoBehaviour
                 if(result<-1)
                 {
                     amount-=itemsPositions[i].getNumOfItems();
+                    OnChangeUpdateView?.Invoke();
                     return amount;
                 }
                 else if(result==-1)
+                {
+                    OnChangeUpdateView?.Invoke();
                     return amount;
+                }
                 else if(result==0)
+                {
+                    OnChangeUpdateView?.Invoke();
                     return 0;
+                }
                 else
                     amount = result;
             }
@@ -479,6 +495,7 @@ public class InventoryComponent : MonoBehaviour
             }
         }
 
+        OnChangeUpdateView?.Invoke();
         return amount;
     }
 
@@ -643,6 +660,7 @@ public class InventoryComponent : MonoBehaviour
             ShrinkInfiniteInventory();
         }
 
+        OnChangeUpdateView?.Invoke();
         return true;
     }
 
@@ -760,6 +778,8 @@ public class InventoryComponent : MonoBehaviour
         {
             ShrinkInfiniteInventory();
         }
+
+        OnChangeUpdateView?.Invoke();
     }
 
 
@@ -796,7 +816,7 @@ public class InventoryComponent : MonoBehaviour
 
                 if(showItemsSorted)
                     sortedPositions = sortFunction(itemsPositions);
-                OnResizing?.Invoke();
+                OnChangeUpdateView?.Invoke();
                 return null;
             }
             else
@@ -835,7 +855,7 @@ public class InventoryComponent : MonoBehaviour
                 itemsPositions = resizedItemsPositions;
                 if(showItemsSorted)
                     sortedPositions = sortFunction(itemsPositions);
-                OnResizing?.Invoke();
+                OnChangeUpdateView?.Invoke();
                 return itemStacksRemoved;
             }
         }
@@ -857,6 +877,8 @@ public class InventoryComponent : MonoBehaviour
 
         sortedPositions = this.sortFunction(itemsPositions);
         showItemsSorted = true;
+
+        OnChangeUpdateView?.Invoke();
     }
 
 
@@ -865,6 +887,7 @@ public class InventoryComponent : MonoBehaviour
     public void CancelShowSortedInventory()
     {
         showItemsSorted = false;
+        OnChangeUpdateView?.Invoke();
     }
 
 

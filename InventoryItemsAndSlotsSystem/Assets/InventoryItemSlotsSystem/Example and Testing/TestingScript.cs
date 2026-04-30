@@ -193,8 +193,6 @@ public class TestingScript : MonoBehaviour
         selectedInventory.RemoveItemsFromInventory(knife,selectedInventory.GetTotalAmountOfThisItem(knife));
         selectedInventory.RemoveItemsFromInventory(rock,selectedInventory.GetTotalAmountOfThisItem(rock));
         selectedInventory.RemoveItemsFromInventory(wood,selectedInventory.GetTotalAmountOfThisItem(wood));
-    
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 
 
@@ -236,7 +234,6 @@ public class TestingScript : MonoBehaviour
     {
         //Debug.Log(selectedItem.name);
         selectedInventory.AddItemsToInventory(selectedItem,amount);
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 
 
@@ -244,8 +241,6 @@ public class TestingScript : MonoBehaviour
     {
         if(!selectedInventory.RemoveItemsFromInventory(selectedItem,amount))
             selectedInventory.RemoveItemsFromInventory(selectedItem,selectedInventory.GetTotalAmountOfThisItem(selectedItem));
-        
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 
 
@@ -316,7 +311,6 @@ public class TestingScript : MonoBehaviour
     public void ShowSortByRarenessDESC()
     {
         selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessDESCAfterByAmountASC,InventorySortingFunctions.addItemToSortedListByRarenessDESC);
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 
 
@@ -324,7 +318,6 @@ public class TestingScript : MonoBehaviour
     public void ShowSortByRarenessASC()
     {
         selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessASCAfterByAmountDESC,InventorySortingFunctions.addItemToSortedListByRarenessASC);
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 
 
@@ -332,7 +325,6 @@ public class TestingScript : MonoBehaviour
     public void CancelSorting()
     {
         selectedInventory.CancelShowSortedInventory();
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 
 
@@ -340,6 +332,5 @@ public class TestingScript : MonoBehaviour
     public void SearchByName()
     {
         selectedInventory.SearchByNamePart(searchInput.text);
-        inventoryManager.UpdateInventoryView(selectedInventory);
     }
 }

@@ -42,10 +42,10 @@ public class InventoryViewComponent : MonoBehaviour
     public void setInventoryComponent(InventoryComponent value)
     {
         if(inventoryComponent!=null)
-            inventoryComponent.OnResizing-=ResizeInventoryUI;
+            inventoryComponent.OnChangeUpdateView-=ResizeInventoryUI;
             
         inventoryComponent = value;
-        inventoryComponent.OnResizing+=ResizeInventoryUI;
+        inventoryComponent.OnChangeUpdateView+=ResizeInventoryUI;
     }
 
     public void setInventoryConfiguration(InventoryConfiguration value)
@@ -73,7 +73,7 @@ public class InventoryViewComponent : MonoBehaviour
         inventorySlot = value;
     }
 
-     public Vector2 getPosition()
+    public Vector2 getPosition()
     {
         return position;
     }
@@ -172,7 +172,7 @@ public class InventoryViewComponent : MonoBehaviour
     //inventoryComponent
     private void OnDestruction()
     {
-        inventoryComponent.OnResizing-=ResizeInventoryUI;
+        inventoryComponent.OnChangeUpdateView-=ResizeInventoryUI;
     }
 
 
