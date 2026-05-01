@@ -26,8 +26,6 @@ public class ItemComponent : MonoBehaviour
     [Tooltip("Cannot be less then 1!")]
     [SerializeField] private Vector2Int itemSize;
 
-    private InventoryConfiguration inventoryConfiguration;
-
     //Getters and setters
     public int getMaxNumberOfBlocksInAStack()
     {
@@ -99,18 +97,6 @@ public class ItemComponent : MonoBehaviour
         itemSize = value;
     }
 
-    public void setInventoryConfiguration(InventoryConfiguration inventoryConfiguration)
-    {
-        this.inventoryConfiguration = inventoryConfiguration;
-        if(this.inventoryConfiguration!=null)
-        {        
-            if(inventoryConfiguration.useFiveTierRareness && rareness==Rareness.None)
-                rareness = Rareness.Common;
-            else if(!inventoryConfiguration.useFiveTierRareness && rareness!=Rareness.None)
-                rareness = Rareness.None;
-        }
-    }
-
     public void setItemStackLimit(int value)
     {
         itemStackLimit = value;
@@ -128,11 +114,5 @@ public class ItemComponent : MonoBehaviour
         //Initialize item
         if(itemName==null)
             itemName = System.Guid.NewGuid().ToString();
-
-        if(inventoryConfiguration!=null)
-        {
-            if(inventoryConfiguration.useFiveTierRareness)
-                rareness = Rareness.Common;
-        }
     }
 }
