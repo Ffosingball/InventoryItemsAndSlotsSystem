@@ -36,6 +36,7 @@ public class InventoryComponent : MonoBehaviour
     //Function which are used to sort and add to sorted list items
     private Func<List<ItemStack>, List<ItemStack>> sortFunction;
     private Action<ItemStack, List<ItemStack>> addToSortedFunction;
+    private Action<ItemStack, List<ItemStack>> removeFromSortedFunction;
     private string searchTarget = "";
     private float totalItemsWeight=0f;
 
@@ -153,6 +154,141 @@ public class InventoryComponent : MonoBehaviour
     }
 
 
+
+    //This method checks if there are enough space for the itemStack to be placed
+    //It only used when Rectangular and AnySize inventory types selected
+    public bool IsEnoughSpaceForItem(ItemStack itemStackToPlace, Vector2Int slotPosition)
+    {
+        return IsEnoughSpaceForItem(itemStackToPlace.getItem(), slotPosition);
+    }
+
+
+
+    //This method checks if there are enough space for the itemStack to be placed
+    //It only used when Rectangular and AnySize inventory types selected
+    public bool IsEnoughSpaceForItem(ItemComponent itemToPlace, Vector2Int slotPosition)
+    {
+        if(isInventoryInfinite && itemsPositions[slotPosition.x+(slotPosition.y*inventoryWidth)]==null)
+        {
+            return true;
+        }
+        else
+        {
+            for(int y=0; y<itemToPlace.getItemSize().y; y++)
+            {
+                for(int x=0; x<itemToPlace.getItemSize().x; x++)
+                {
+                    if(slotPosition.x+x>inventoryWidth || slotPosition.y+y>inventoryHeight)
+                        return false;
+                    else if(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)]!=null)
+                        return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+
+
+    //This method checks if there are enough space for the itemStack to be placed
+    //in a provided list
+    //It only used when Rectangular and AnySize inventory types selected
+    private bool IsEnoughSpaceForItem(ItemStack itemStackToPlace, Vector2Int slotPosition, List<ItemStack> listOfStacks, Vector2Int listDimensions)
+    {
+        if(isInventoryInfinite && listOfStacks[slotPosition.x+(slotPosition.y*listDimensions.x)]==null)
+        {
+            return true;
+        }
+        else
+        {
+            for(int y=0; y<itemStackToPlace.getItem().getItemSize().y; y++)
+            {
+                for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
+                {
+                    if(slotPosition.x+x>listDimensions.x || slotPosition.y+y>listDimensions.x)
+                        return false;
+                    else if(listOfStacks[slotPosition.x+x+((slotPosition.y+y)*listDimensions.x)]!=null)
+                        return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+
+
+    //This method places multidimensional items in the inventory (1x2, 2x2 etc.)
+    //It only used when Rectangular and AnySize inventory types selected
+    //Slot position in the array
+    //IMPORTANT! Whe I call this method I assume there are enough empty space for the itemsStack
+    //to be placed, so before calling this call IsEnoughSpaceForItem()
+    private void PlaceItemStackBlock(ItemStack itemStackToPlace, int slotPosition)
+    {
+        if(isInventoryInfinite)
+        {
+            if(!IsEnoughSpaceForItem(itemStackToPlace, new Vector2Int(slotPosition%inventoryWidth, slotPosition/inventoryHeight)))
+            {
+                bool foundPosition=false;
+                for(int i=0; i<itemsPositions.Count; i++)
+                {
+                    if(IsEnoughSpaceForItem(itemStackToPlace, new Vector2Int(i%inventoryWidth, i/inventoryHeight)))
+                    {
+                        slotPosition=i;
+                        foundPosition=true;
+                        break;
+                    }
+                }
+
+                if(!foundPosition)
+                {
+                    inventoryHeight+=itemStackToPlace.getItem().getItemSize().y;
+                    slotPosition = itemsPositions.Count;
+
+                    for(int i=0; i<itemStackToPlace.getItem().getItemSize().y*inventoryWidth; i++)
+                    {
+                        itemsPositions.Add(null);
+                    }
+                }
+            }
+        }
+        
+        List<int> allPositionsList = new List<int>();
+        for(int y=0; y<itemStackToPlace.getItem().getItemSize().y; y++)
+        {
+            for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
+            {
+                itemsPositions[slotPosition+x+(y*inventoryWidth)]=itemStackToPlace;
+                allPositionsList.Add(slotPosition+x+(y*inventoryWidth));
+            }
+        }
+
+        itemStackToPlace.setCellsOccupied(allPositionsList);
+    }
+
+
+
+    //This method removes multidimensional items from the inventory (1x2, 2x2 etc.)
+    //It only used when Rectangular and AnySize inventory types selected
+    //Slot position in the array
+    private void RemoveItemsBlockByPosition(int slotPosition, Vector2Int inventoryDimensions)
+    {
+        List<int> positionsToClear = itemsPositions[slotPosition].getCellsOccupied();
+
+        foreach(int position in positionsToClear)
+        {
+            itemsPositions[position] = null;
+        }
+    }
+
+    private void RemoveItemsBlockByPosition(int slotPosition)
+    {
+        RemoveItemsBlockByPosition(slotPosition, new Vector2Int(inventoryWidth, inventoryHeight));
+    }
+
+
+
     //This function takes itemStack and position where it should be placed
     //and tries to place it. After it will return the result of the itemStack placement
     public NewItemPlacementResult PlaceItemStackToInventory(ItemStack itemStack, Vector2Int position)
@@ -178,7 +314,7 @@ public class InventoryComponent : MonoBehaviour
                 bool foundEmptySpace = false;
                 for(int i=0; i<itemsPositions.Count; i++)
                 {
-                    if(itemsPositions[i]==null)
+                    if((itemsPositions[i]==null && inventoryConfiguration.inventoryType==InventoryType.SingleCelled) || (inventoryConfiguration.inventoryType!=InventoryType.SingleCelled && IsEnoughSpaceForItem(itemStack, new Vector2Int(i%inventoryWidth,i/inventoryWidth))))
                     {
                         //If found then set position to this one
                         foundEmptySpace = true;
@@ -198,8 +334,16 @@ public class InventoryComponent : MonoBehaviour
                 }
             }
 
+            //If inventoryType is not sigle celled and area for this item is not empty then
+            //do not try to place item
+            if(inventoryConfiguration.inventoryType!=InventoryType.SingleCelled && !IsEnoughSpaceForItem(itemStack, position))
+            {
+                placementResult.areaIsOccupied = true;
+                return placementResult;
+            }
+
             //Check if slot at the provided position has itemStack
-            if(itemsPositions[arrPosition]!=null)
+            if(itemsPositions[arrPosition]!=null && inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
             {
                 //In this case remove it from the slot
                 //If provided itemStack contains the same item as in the slot
@@ -274,8 +418,7 @@ public class InventoryComponent : MonoBehaviour
                     //if sorting inventory is on then remove replaced stack from the sorted list
                     if(showItemsSorted)
                     {
-                        sortedPositions.Remove(placementResult.stackReplaced);
-                        sortedPositions.Add(null);
+                        removeFromSortedFunction(placementResult.stackReplaced, sortedPositions);
                     }
 
                     //Remove replaced item from all other lists
@@ -322,7 +465,10 @@ public class InventoryComponent : MonoBehaviour
                 if(showItemsSorted)
                     addToSortedFunction(itemStack, sortedPositions);
                 itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
-                itemsPositions[arrPosition] = itemStack;
+                if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
+                    itemsPositions[arrPosition] = itemStack;
+                else
+                    PlaceItemStackBlock(itemStack, arrPosition);
                 totalItems++;
                 totalItemsWeight+=itemStack.getTotalWeight();
 
@@ -382,8 +528,7 @@ public class InventoryComponent : MonoBehaviour
                     //amount of items has changed
                     if(showItemsSorted)
                     {
-                        sortedPositions.Remove(itemStack);
-                        sortedPositions.Add(null);
+                        removeFromSortedFunction(itemStack, sortedPositions);
                         addToSortedFunction(itemStack, sortedPositions);
                     }
 
@@ -412,7 +557,7 @@ public class InventoryComponent : MonoBehaviour
         //and insert itemStacks there
         for(int i=0; i<itemsPositions.Count; i++)
         {
-            if(itemsPositions[i]==null)
+            if((itemsPositions[i]==null && inventoryConfiguration.inventoryType==InventoryType.SingleCelled) || (inventoryConfiguration.inventoryType!=InventoryType.SingleCelled && IsEnoughSpaceForItem(item, new Vector2Int(i%inventoryWidth,i/inventoryWidth))))
             {
                 int result = InsertItemAt(i, item, amount);
                 if(result<-1)
@@ -462,7 +607,7 @@ public class InventoryComponent : MonoBehaviour
             //Go through every new added slot and insert there 
             for(int i=(inventoryHeight-heightToAdd)*inventoryWidth; i<itemsPositions.Count; i++)
             {
-                if(itemsPositions[i]==null)
+                if((itemsPositions[i]==null && inventoryConfiguration.inventoryType==InventoryType.SingleCelled) || (inventoryConfiguration.inventoryType!=InventoryType.SingleCelled && IsEnoughSpaceForItem(item, new Vector2Int(i%inventoryWidth,i/inventoryWidth))))
                 {
                     int result = InsertItemAt(i, item, amount);
                     if(result<-1)
@@ -516,7 +661,10 @@ public class InventoryComponent : MonoBehaviour
 
             if(showItemsSorted)
                 addToSortedFunction(newItemStack, sortedPositions);
-            itemsPositions[arrPosition] = newItemStack;
+            if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
+                itemsPositions[arrPosition] = newItemStack;
+            else
+                PlaceItemStackBlock(newItemStack, arrPosition);
             itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
 
             //Check if items weight is on and this inventory has weight limit
@@ -528,10 +676,12 @@ public class InventoryComponent : MonoBehaviour
                 {
                     if(showItemsSorted)
                     {
-                        sortedPositions.Remove(newItemStack);
-                        sortedPositions.Add(null);
+                        removeFromSortedFunction(newItemStack, sortedPositions);
                     }
-                    itemsPositions[arrPosition] = null;
+                    if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
+                        itemsPositions[arrPosition] = null;
+                    else
+                        RemoveItemsBlockByPosition(arrPosition);
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].Remove(newItemStack);
                 }
                 else
@@ -556,60 +706,121 @@ public class InventoryComponent : MonoBehaviour
     //This method reduces amount of rows with empty slots in the infiniteInventory
     private void ShrinkInfiniteInventory()
     {
-        int clearedPosition = 0;
-        //This loop starts from the end of the inventory and tries to find empty
-        //slots at the begining and replace itemStacks from the end of the inventory
-        //into the empty slots at the begining
-        for(int i=itemsPositions.Count-1; i>0; i--)
+        //Check if all items are signgle celled then we can move them 
+        //otherwise do not move items and only remove empty rows
+        if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
         {
-            if(itemsPositions[i]!=null)
+            int clearedPosition = 0;
+            //This loop starts from the end of the inventory and tries to find empty
+            //slots at the begining and replace itemStacks from the end of the inventory
+            //into the empty slots at the begining
+            for(int i=itemsPositions.Count-1; i>0; i--)
             {
-                while(itemsPositions[clearedPosition]!=null)
+                if(itemsPositions[i]!=null)
                 {
-                    clearedPosition++;
+                    while(itemsPositions[clearedPosition]!=null)
+                    {
+                        clearedPosition++;
+                        if(clearedPosition>=i)
+                            break;
+                    }
+
                     if(clearedPosition>=i)
                         break;
+
+                    itemsPositions[clearedPosition] = itemsPositions[i];
+                    itemsPositions[clearedPosition].getCellsOccupied().RemoveAt(0);
+                    itemsPositions[clearedPosition].getCellsOccupied().Add(clearedPosition);
                 }
 
-                if(clearedPosition>=i)
-                    break;
-
-                itemsPositions[clearedPosition] = itemsPositions[i];
-                itemsPositions[clearedPosition].getCellsOccupied().RemoveAt(0);
-                itemsPositions[clearedPosition].getCellsOccupied().Add(clearedPosition);
-            }
-
-            itemsPositions.RemoveAt(i);
-            if(showItemsSorted)
-                sortedPositions.RemoveAt(sortedPositions.Count-1);
-        }
-        clearedPosition++;
-
-        //Check if current size of the inventory is larger than its initial
-        if(clearedPosition>initialInventoryHeight*inventoryWidth)
-        {
-            //Then decrease its height
-            inventoryHeight=clearedPosition/inventoryWidth;
-            if(clearedPosition%inventoryWidth!=0)
-                inventoryHeight++;
-
-            //And add missing slots at the last row
-            while(itemsPositions.Count%inventoryWidth!=0)
-            {
-                itemsPositions.Add(null);
+                itemsPositions.RemoveAt(i);
                 if(showItemsSorted)
-                    sortedPositions.Add(null);
+                    sortedPositions.RemoveAt(sortedPositions.Count-1);
+            }
+            clearedPosition++;
+
+            //Check if current size of the inventory is larger than its initial
+            if(clearedPosition>initialInventoryHeight*inventoryWidth)
+            {
+                //Then decrease its height
+                inventoryHeight=clearedPosition/inventoryWidth;
+                if(clearedPosition%inventoryWidth!=0)
+                    inventoryHeight++;
+
+                //And add missing slots at the last row
+                while(itemsPositions.Count%inventoryWidth!=0)
+                {
+                    itemsPositions.Add(null);
+                    if(showItemsSorted)
+                        sortedPositions.Add(null);
+                }
+            }
+            else
+            {
+                //Otherwise just add missing slots
+                inventoryHeight=initialInventoryHeight;
+                for(int i=clearedPosition; i<inventoryHeight*inventoryWidth; i++)
+                {
+                    itemsPositions.Add(null);
+                    if(showItemsSorted)
+                        sortedPositions.Add(null);
+                }
             }
         }
         else
         {
-            //Otherwise just add missing slots
-            inventoryHeight=initialInventoryHeight;
-            for(int i=clearedPosition; i<inventoryHeight*inventoryWidth; i++)
+            //Remove empty rows in the inventory
+            int emptyCellsInARow=0;
+            for(int i=0; i<itemsPositions.Count; i++)
             {
-                itemsPositions.Add(null);
-                if(showItemsSorted)
-                    sortedPositions.Add(null);
+                if(itemsPositions[i]==null)
+                {
+                    emptyCellsInARow++;
+                }
+
+                if(i%inventoryWidth==0)
+                {
+                    if(emptyCellsInARow==inventoryWidth && initialInventoryHeight<inventoryHeight)
+                    {
+                        i-=inventoryWidth;
+                        for(int j=0; j<inventoryWidth; j++)
+                        {
+                            itemsPositions.RemoveAt(i);
+                        }
+                        inventoryHeight--;
+                    }
+
+                    emptyCellsInARow=0;
+                }
+            }
+
+            //Remove empty rows in sorted inventory if applicable
+            if(showItemsSorted)
+            {
+                emptyCellsInARow=0;
+                int currentHeight = sortedPositions.Count/inventoryWidth;
+                for(int i=0; i<sortedPositions.Count; i++)
+                {
+                    if(sortedPositions[i]==null)
+                    {
+                        emptyCellsInARow++;
+                    }
+
+                    if(i%inventoryWidth==0)
+                    {
+                        if(emptyCellsInARow==inventoryWidth && initialInventoryHeight<currentHeight)
+                        {
+                            i-=inventoryWidth;
+                            for(int j=0; j<inventoryWidth; j++)
+                            {
+                                sortedPositions.RemoveAt(i);
+                            }
+                            currentHeight--;
+                        }
+
+                        emptyCellsInARow=0;
+                    }
+                }
             }
         }
     }
@@ -637,12 +848,14 @@ public class InventoryComponent : MonoBehaviour
                 {
                     if(showItemsSorted)
                     {
-                        sortedPositions.Remove(itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]);
-                        sortedPositions.Add(null);
+                        removeFromSortedFunction(itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]], sortedPositions);
                     }
 
                     totalItemsWeight-=itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]].getTotalWeight();
-                    itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
+                    if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
+                        itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
+                    else
+                        RemoveItemsBlockByPosition(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]);
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
                     totalItems--;
                 }
@@ -753,8 +966,7 @@ public class InventoryComponent : MonoBehaviour
                     
                 if(stackToRemove!=null)
                 {
-                    sortedPositions.Remove(stackToRemove);
-                    sortedPositions.Add(null);
+                    removeFromSortedFunction(stackToRemove, sortedPositions);
                 }
             }
             else
@@ -764,7 +976,10 @@ public class InventoryComponent : MonoBehaviour
             if(stackToRemove!=null)
             {
                 totalItemsWeight-=itemsPositions[stackToRemove.getCellsOccupied()[0]].getTotalWeight();
-                itemsPositions[stackToRemove.getCellsOccupied()[0]]=null;
+                if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
+                    itemsPositions[stackToRemove.getCellsOccupied()[0]]=null;
+                else
+                    RemoveItemsBlockByPosition(stackToRemove.getCellsOccupied()[0]);
                 itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
                 totalItems--;
 
@@ -792,9 +1007,20 @@ public class InventoryComponent : MonoBehaviour
         if(!isInventoryInfinite)
         {
             //Set new sizes
+            int previousHeight = inventoryHeight;
+            int previousWidth = inventoryWidth;
             inventoryHeight = newInventoryHeight<0 ? inventoryHeight : newInventoryHeight;
             initialInventoryHeight = inventoryHeight;
             inventoryWidth = newInventoryWidth<0 ? inventoryWidth : newInventoryWidth;
+
+            //Remove all stored slot positions, because new ones will be inserted
+            foreach(KeyValuePair<(string, Rareness), List<ItemStack>> kvp in itemsInTheInventory)
+            {
+                foreach(ItemStack stack in kvp.Value)
+                {
+                    stack.getCellsOccupied().Clear();
+                }
+            }
 
             //Create resized list of slots
             List<ItemStack> resizedItemsPositions = new List<ItemStack>();
@@ -805,11 +1031,26 @@ public class InventoryComponent : MonoBehaviour
 
             //If resized inventory is larger than the previous one then just
             //copy all itemStacks into resized list
-            if(itemsPositions.Count<resizedItemsPositions.Count)
+            if(previousHeight<=inventoryHeight && previousWidth<=inventoryWidth)
             {
-                for(int i=0; i<itemsPositions.Count; i++)
+                if(previousWidth==inventoryWidth)
                 {
-                    resizedItemsPositions[i] = itemsPositions[i];
+                    for(int i=0; i<itemsPositions.Count; i++)
+                    {
+                        resizedItemsPositions[i] = itemsPositions[i];
+                        resizedItemsPositions[i].getCellsOccupied().Add(i);
+                    }
+                }
+                else
+                {
+                    int newI = 0;
+                    for(int i=0; i<itemsPositions.Count; i++)
+                    {
+                        if(i%previousWidth==0)
+                            newI+=inventoryWidth;
+                        resizedItemsPositions[newI+(i/previousWidth)] = itemsPositions[i];
+                        resizedItemsPositions[newI+(i/previousWidth)].getCellsOccupied().Add(newI+(i/previousWidth));
+                    }
                 }
 
                 itemsPositions = resizedItemsPositions;
@@ -823,40 +1064,103 @@ public class InventoryComponent : MonoBehaviour
             {
                 //Otherwise copy as much itemStacks into resized list as possible
                 List<ItemStack> itemStacksRemoved = null;
-                int positionsSkipped=0;
-                bool copiedAllItems=false;
-                for(int i=0; i<resizedItemsPositions.Count; i++)
-                {
-                    if(itemsPositions[i]!=null)
-                        resizedItemsPositions[i] = itemsPositions[i+positionsSkipped];
-                    else
-                        positionsSkipped++;
 
-                    //If all items were copied then complete resizing
-                    if(positionsSkipped+i>=resizedItemsPositions.Count)
-                    {
-                        copiedAllItems = true;
-                        break;
-                    }
-                }
-
-                //If there are still some items left then add them to list of
-                //removed itemStacks
-                if(!copiedAllItems)
+                //Check if inventory is sigle celled then just copy all stacks and return 
+                //those which not fit 
+                if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
                 {
-                    itemStacksRemoved = new List<ItemStack>();
-                    for(int i=resizedItemsPositions.Count+positionsSkipped; i<itemsPositions.Count; i++)
+                    int positionsSkipped=0;
+                    bool copiedAllItems=false;
+                    for(int i=0; i<resizedItemsPositions.Count; i++)
                     {
                         if(itemsPositions[i]!=null)
-                            itemStacksRemoved.Add(itemsPositions[i]);
-                    }
-                }
+                        {
+                            resizedItemsPositions[i] = itemsPositions[i+positionsSkipped];
+                            resizedItemsPositions[i].getCellsOccupied().Add(i);
+                        }
+                        else
+                            positionsSkipped++;
 
-                itemsPositions = resizedItemsPositions;
-                if(showItemsSorted)
-                    sortedPositions = sortFunction(itemsPositions);
-                OnChangeUpdateView?.Invoke();
-                return itemStacksRemoved;
+                        //If all items were copied then complete resizing
+                        if(positionsSkipped+i>=resizedItemsPositions.Count)
+                        {
+                            copiedAllItems = true;
+                            break;
+                        }
+                    }
+
+                    //If there are still some items left then add them to list of
+                    //removed itemStacks
+                    if(!copiedAllItems)
+                    {
+                        itemStacksRemoved = new List<ItemStack>();
+                        for(int i=resizedItemsPositions.Count+positionsSkipped; i<itemsPositions.Count; i++)
+                        {
+                            if(itemsPositions[i]!=null)
+                            {
+                                itemStacksRemoved.Add(itemsPositions[i]);
+                                totalItemsWeight-=itemsPositions[itemsPositions[i].getCellsOccupied()[0]].getTotalWeight();
+                                totalItems--;
+                                itemsInTheInventory[(itemsPositions[i].getItem().getItemName(),itemsPositions[i].getItem().getRareness())].Remove(itemsPositions[i]);
+                                if(itemsInTheInventory[(itemsPositions[i].getItem().getItemName(),itemsPositions[i].getItem().getRareness())].Count==0)
+                                    itemsInTheInventory.Remove((itemsPositions[i].getItem().getItemName(),itemsPositions[i].getItem().getRareness()));
+                            }
+                        }
+                    }
+
+                    itemsPositions = resizedItemsPositions;
+                    if(showItemsSorted)
+                        sortedPositions = sortFunction(itemsPositions);
+                    OnChangeUpdateView?.Invoke();
+                    return itemStacksRemoved;
+                }
+                else
+                {
+                    //Others more rigours check on whether the item can be fit should be done
+                    List<ItemStack> itemStacksWhichWillStay = new List<ItemStack>();
+                    itemStacksRemoved = new List<ItemStack>();
+
+                    int newListPosition = 0;
+                    for(int j=0; j<itemsPositions.Count; j++)
+                    {
+                        if(j%previousWidth==0)
+                            newListPosition+=inventoryWidth;
+
+                        if(itemsPositions[j]!=null)
+                        {
+                            if(itemStacksWhichWillStay.Contains(itemsPositions[j]))
+                            {
+                                resizedItemsPositions[newListPosition+(j%previousWidth)] = itemsPositions[j];
+                                resizedItemsPositions[newListPosition+(j%previousWidth)].getCellsOccupied().Add(newListPosition+(j%previousWidth));
+                            }
+                            else
+                            {
+                                if(IsEnoughSpaceForItem(itemsPositions[j], new Vector2Int(j%previousWidth, j/previousWidth), resizedItemsPositions, new Vector2Int(inventoryWidth, inventoryHeight)))
+                                {
+                                    itemStacksWhichWillStay.Add(itemsPositions[j]);
+                                    resizedItemsPositions[newListPosition+(j%previousWidth)] = itemsPositions[j];
+                                    resizedItemsPositions[newListPosition+(j%previousWidth)].getCellsOccupied().Add(newListPosition+(j%previousWidth));
+                                }
+                                else
+                                {
+                                    itemStacksRemoved.Add(itemsPositions[j]);
+                                    totalItemsWeight-=itemsPositions[j].getTotalWeight();
+                                    totalItems--;
+                                    itemsInTheInventory[(itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness())].Remove(itemsPositions[j]);
+                                    if(itemsInTheInventory[(itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness())].Count==0)
+                                        itemsInTheInventory.Remove((itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness()));
+                                    RemoveItemsBlockByPosition(j, new Vector2Int(previousWidth, previousHeight));
+                                }
+                            }
+                        }
+                    }
+
+                    itemsPositions = resizedItemsPositions;
+                    if(showItemsSorted)
+                        sortedPositions = sortFunction(itemsPositions);
+                    OnChangeUpdateView?.Invoke();
+                    return itemStacksRemoved;
+                }
             }
         }
 
@@ -870,10 +1174,11 @@ public class InventoryComponent : MonoBehaviour
     //sortFunction sort the hwole unsorted list, addToSortedListFunction adds new
     //item to already sorted list (IMPORTANT! For your custom add function the
     //length of the sortedList should remain the same before and after this function!)
-    public void ShowInventorySorted(Func<List<ItemStack>, List<ItemStack>> sortFunction, Action<ItemStack, List<ItemStack>> addToSortedListFunction)
+    public void ShowInventorySorted(Func<List<ItemStack>, List<ItemStack>> sortFunction, Action<ItemStack, List<ItemStack>> addToSortedListFunction, Action<ItemStack, List<ItemStack>> removeFromSortedListFunction)
     {
         this.sortFunction = sortFunction;
         addToSortedFunction = addToSortedListFunction;
+        removeFromSortedFunction = removeFromSortedListFunction;
 
         sortedPositions = this.sortFunction(itemsPositions);
         showItemsSorted = true;
@@ -910,6 +1215,6 @@ public class InventoryComponent : MonoBehaviour
     public void SearchByNamePart(string namePart)
     {
         searchTarget = namePart;
-        ShowInventorySorted(SearchRedirect, AddSearchRedirect);
+        ShowInventorySorted(SearchRedirect, AddSearchRedirect, InventorySortingFunctions.simpleRemoveFuction);
     }
 }

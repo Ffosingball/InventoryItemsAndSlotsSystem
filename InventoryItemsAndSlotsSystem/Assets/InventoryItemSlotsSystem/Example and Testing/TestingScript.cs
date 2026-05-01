@@ -310,27 +310,31 @@ public class TestingScript : MonoBehaviour
 
     public void ShowSortByRarenessDESC()
     {
-        selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessDESCAfterByAmountASC,InventorySortingFunctions.addItemToSortedListByRarenessDESC);
+        if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
+            selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessDESCAfterByAmountASC,InventorySortingFunctions.addItemToSortedListByRarenessDESC,InventorySortingFunctions.simpleRemoveFuction);
     }
 
 
 
     public void ShowSortByRarenessASC()
     {
-        selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessASCAfterByAmountDESC,InventorySortingFunctions.addItemToSortedListByRarenessASC);
+        if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
+            selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessASCAfterByAmountDESC,InventorySortingFunctions.addItemToSortedListByRarenessASC,InventorySortingFunctions.simpleRemoveFuction);
     }
 
 
 
     public void CancelSorting()
     {
-        selectedInventory.CancelShowSortedInventory();
+        if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
+            selectedInventory.CancelShowSortedInventory();
     }
 
 
 
     public void SearchByName()
     {
-        selectedInventory.SearchByNamePart(searchInput.text);
+        if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
+            selectedInventory.SearchByNamePart(searchInput.text);
     }
 }

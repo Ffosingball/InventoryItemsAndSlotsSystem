@@ -439,4 +439,12 @@ public static class InventorySortingFunctions
             }
         }
     }
+
+
+
+    public static void simpleRemoveFuction(ItemStack stackToRemove, List<ItemStack> list)
+    {
+        list.Remove(stackToRemove);
+        list.Add(null);
+    }
 }

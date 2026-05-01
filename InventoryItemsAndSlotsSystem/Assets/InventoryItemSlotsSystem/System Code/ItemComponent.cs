@@ -22,6 +22,10 @@ public class ItemComponent : MonoBehaviour
     [Tooltip("Cannot be less then 0!")]
     [SerializeField] private int itemStackLimit = 3;
 
+    [Header("Change only if inventory type is not sigle celled")]
+    [Tooltip("Cannot be less then 1!")]
+    [SerializeField] private Vector2Int itemSize;
+
     private InventoryConfiguration inventoryConfiguration;
 
     //Getters and setters
@@ -83,6 +87,16 @@ public class ItemComponent : MonoBehaviour
     public void setPicture(Sprite picture)
     {
         this.picture = picture;
+    }
+
+    public Vector2Int getItemSize()
+    {
+        return itemSize;
+    }
+
+    public void setItemSize(Vector2Int value)
+    {
+        itemSize = value;
     }
 
     public void setInventoryConfiguration(InventoryConfiguration inventoryConfiguration)
