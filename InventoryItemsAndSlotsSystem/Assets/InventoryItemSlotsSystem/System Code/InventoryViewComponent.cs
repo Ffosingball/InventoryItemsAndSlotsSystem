@@ -170,7 +170,7 @@ public class InventoryViewComponent : MonoBehaviour
 
     //When gameobject is destroyed is should remove its method from the event of the
     //inventoryComponent
-    private void OnDestruction()
+    private void OnDestroy()
     {
         inventoryComponent.OnChangeUpdateView-=ResizeInventoryUI;
     }
@@ -259,6 +259,21 @@ public class InventoryViewComponent : MonoBehaviour
         }
     }
 
+    //This method turns on outline with provided color and thikness for the provided slot
+    public void SetSlotOutline(GameObject slot, Color outlineColor, float thikness)
+    {
+        Outline slotOutline = slot.GetComponent<Outline>();
+        slotOutline.enabled = true;
+
+        Color color = slotOutline.effectColor;
+        color.r+=outlineColor.r;
+        color.g+=outlineColor.g;
+        color.b+=outlineColor.b;
+        slotOutline.effectColor = color;
+
+        slotOutline.effectDistance = new Vector2(thikness, -thikness);
+    }
+
 
 
     //This method turns off outline in the slot at the provided position
@@ -273,6 +288,12 @@ public class InventoryViewComponent : MonoBehaviour
         }
     }
 
+    public void RemoveSlotOutline(GameObject slot)
+    {
+        Outline slotOutline = slot.GetComponent<Outline>();
+        slotOutline.enabled = false;
+    }
+
 
 
     //This method makes slot at the provided position selected!
@@ -285,8 +306,17 @@ public class InventoryViewComponent : MonoBehaviour
             if(selectedSlotPosition!=position && selectedSlotPosition.x!=-1)
                 DeselectSlot();
 
-            SetSlotOutline(position, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
-            selectedSlotPosition = position;
+            if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled || inventoryComponent.GetItemStackByPosition(position)==null)
+            {
+                SetSlotOutline(position, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
+                selectedSlotPosition = position;
+            }
+            else
+            {
+                int firstPosition = inventoryComponent.GetItemStackByPosition(position).getCellsOccupied()[0];
+                SetSlotOutline(content.transform.Find(firstPosition+"icon").gameObject, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
+                selectedSlotPosition = new Vector2Int(firstPosition%inventoryComponent.getInventoryWidth(), firstPosition/inventoryComponent.getInventoryWidth());
+            }
 
             return true;
         }
@@ -303,7 +333,10 @@ public class InventoryViewComponent : MonoBehaviour
         {
             if(content.transform.Find((selectedSlotPosition.x+selectedSlotPosition.y*inventoryComponent.getInventoryWidth()).ToString())!=null)
             {
-                RemoveSlotOutline(selectedSlotPosition);
+                if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled || inventoryComponent.GetItemStackByPosition(selectedSlotPosition)==null)
+                    RemoveSlotOutline(selectedSlotPosition);
+                else
+                    SetSlotOutline(content.transform.Find(selectedSlotPosition+"icon").gameObject, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
                 selectedSlotPosition = new Vector2Int(-1,-1);
 
                 return true;
@@ -417,6 +450,9 @@ public class InventoryViewComponent : MonoBehaviour
                         for (int j=0; j<inventoryComponent.getInventoryWidth(); j++)
                         {
                             Destroy(content.transform.Find((j+i*inventoryComponent.getInventoryWidth()).ToString()).gameObject);
+                            GameObject iconSlot = content.transform.Find((j+i*inventoryComponent.getInventoryWidth())+"icon").gameObject;
+                            if(iconSlot!=null)
+                                Destroy(iconSlot);
                         }
                     }
                 }
@@ -438,14 +474,48 @@ public class InventoryViewComponent : MonoBehaviour
                 Image slotImage = content.transform.Find(i.ToString()).Find("ItemImage").gameObject.GetComponent<Image>();
                 TMP_Text slotText = content.transform.Find(i.ToString()).Find("ItemText").gameObject.GetComponent<TMP_Text>();
                 Image backgroundImage = content.transform.Find(i.ToString()).gameObject.GetComponent<Image>();
+                RectTransform slotTransform = content.transform.Find(i.ToString()).gameObject.GetComponent<RectTransform>();
 
                 //Check if item at this position is not null
                 if(itemStacks[i]!=null)
                 {
                     //then set slot accordingly
-                    slotImage.sprite = itemStacks[i].getItem().getPicture();
-                    slotText.text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : itemStacks[i].getNumOfItems().ToString();
-                
+                    if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
+                    {
+                        slotImage.sprite = itemStacks[i].getItem().getPicture();
+                        slotText.text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : itemStacks[i].getNumOfItems().ToString();
+                    }
+                    else
+                    {
+                        if(itemStacks[i].getCellsOccupied()[0]==i)
+                        {
+                            GameObject iconSlot = content.transform.Find(i+"icon").gameObject;
+                            if(iconSlot==null)
+                            {
+                                iconSlot = Instantiate(inventorySlot);
+                                iconSlot.transform.SetParent(content.transform);
+                                iconSlot.name = i+"icon";
+                                Destroy(iconSlot.GetComponent<InventorySlotComponent>());
+                            }
+
+                            RectTransform iconSlotTransform = iconSlot.GetComponent<RectTransform>();
+                            iconSlotTransform.localScale = new Vector3(1,1,1);
+
+                            Vector2 position = new Vector2();
+                            position.x = slotTransform.anchoredPosition.x + (((itemStacks[i].getItem().getItemSize().x*inventoryConfiguration.slotSizePercentage*Screen.width)+((itemStacks[i].getItem().getItemSize().x-1)*inventoryConfiguration.marginBetweenSlots*Screen.width))/2) - (inventoryConfiguration.slotSizePercentage*Screen.width/2);
+                            position.y = slotTransform.anchoredPosition.y + (((itemStacks[i].getItem().getItemSize().y*inventoryConfiguration.slotSizePercentage*Screen.width)+((itemStacks[i].getItem().getItemSize().y-1)*inventoryConfiguration.marginBetweenSlots*Screen.width))/2) - (inventoryConfiguration.slotSizePercentage*Screen.width/2);
+                            iconSlotTransform.anchoredPosition = position;
+
+                            Vector2 size = new Vector2();
+                            size.x = (itemStacks[i].getItem().getItemSize().x*inventoryConfiguration.slotSizePercentage*Screen.width)+((itemStacks[i].getItem().getItemSize().x-1)*inventoryConfiguration.marginBetweenSlots*Screen.width);
+                            size.y = (itemStacks[i].getItem().getItemSize().y*inventoryConfiguration.slotSizePercentage*Screen.width)+((itemStacks[i].getItem().getItemSize().y-1)*inventoryConfiguration.marginBetweenSlots*Screen.width);
+                            iconSlotTransform.sizeDelta = size;
+
+                            iconSlot.GetComponent<Image>().sprite = itemStacks[i].getItem().getPicture();
+                            iconSlot.GetComponent<TMP_Text>().text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : itemStacks[i].getNumOfItems().ToString();
+                        }
+                    }
+
                     if(inventoryConfiguration.useFiveTierRareness)
                         IndicateItemRareness(slotImage, backgroundImage, itemStacks[i].getItem().getRareness());
                 }
@@ -454,6 +524,13 @@ public class InventoryViewComponent : MonoBehaviour
                     //otherwise make slot empty
                     slotImage.sprite = nothing;
                     slotText.text = "";
+
+                    if(inventoryConfiguration.inventoryType!=InventoryType.SingleCelled)
+                    {
+                        GameObject iconSlot = content.transform.Find(i+"icon").gameObject;
+                        if(iconSlot!=null)
+                            Destroy(iconSlot);
+                    }
 
                     if(inventoryConfiguration.useFiveTierRareness)
                         IndicateItemRareness(slotImage, backgroundImage, Rareness.None);
