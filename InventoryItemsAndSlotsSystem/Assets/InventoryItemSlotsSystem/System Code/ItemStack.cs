@@ -16,6 +16,7 @@ public class ItemStack
     private InventoryConfiguration inventoryConfiguration;
     //Is stack full or not
     private bool isFull=false;
+    private bool onlyOneItemPerStack = false;
 
     //Getters and setters
     public int getNumOfItems()
@@ -48,13 +49,24 @@ public class ItemStack
         this.cellOccupied = cellOccupied;
     }
 
+    public bool getOnlyOneItemPerStack()
+    {
+        return onlyOneItemPerStack;
+    }
+
+    public void setOnlyOneItemPerStack(bool vlaue)
+    {
+        onlyOneItemPerStack = vlaue;
+    }
+
 
     //Contructor if all items are signle celled
-    public ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration, int cellOccupied)
+    public ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration, int cellOccupied, bool onlyOneItemPerStack=false)
     {
         this.item = item;
         this.inventoryConfiguration = inventoryConfiguration;
         this.cellOccupied=cellOccupied;
+        this.onlyOneItemPerStack = onlyOneItemPerStack;
     }
 
 
@@ -64,6 +76,19 @@ public class ItemStack
     {
         if(amount<0)
             return -1;
+        else if(amount==0)
+            return 0;
+
+        if(onlyOneItemPerStack)
+        {
+            if(numOfItems==0)
+            {
+                numOfItems++;
+                amount--;
+            }
+
+            return amount;
+        }
 
         numOfItems+=amount;
 
@@ -95,6 +120,19 @@ public class ItemStack
 
         if(amount<0)
             return -1;
+        else if(amount==0)
+            return 0;
+
+        if(onlyOneItemPerStack)
+        {
+            if(numOfItems>0)
+            {
+                numOfItems--;
+                amount--;
+            }
+
+            return amount;
+        }
 
         numOfItems-=amount;
 

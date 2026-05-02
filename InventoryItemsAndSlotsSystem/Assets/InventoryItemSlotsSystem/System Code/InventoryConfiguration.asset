@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: InventoryConfiguration
   m_EditorClassIdentifier: Assembly-CSharp::InventoryConfiguration
   useFiveTierRareness: 1
-  itemStacksLimit: 0
+  itemStacksLimit: 1
   inventoryType: 1
   arbitraryStackPlacement: 1
-  itemsHasAWeight: 0
+  itemsHasAWeight: 1
   visibleSlotsInHeight: 5
   marginBetweenSlots: 0.005
   outerMargin: 0.01
@@ -30,3 +30,4 @@ MonoBehaviour:
   epicItemColor: {r: 0.68, g: 0.21, b: 0.8, a: 1}
   legendaryItemColor: {r: 0.86, g: 0.61, b: 0.17, a: 1}
   emptySlotColor: {r: 0.2971698, g: 0.2971698, b: 0.2971698, a: 1}
+  alphaValueForMultiCelledSlots: 0.6

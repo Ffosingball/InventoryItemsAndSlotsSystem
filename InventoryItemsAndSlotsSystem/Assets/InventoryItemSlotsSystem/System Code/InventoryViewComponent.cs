@@ -556,7 +556,7 @@ public class InventoryViewComponent : MonoBehaviour
                     if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
                     {
                         slotImage.sprite = itemStacks[i].getItem().getPicture();
-                        slotText.text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : itemStacks[i].getNumOfItems().ToString();
+                        slotText.text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 || inventoryComponent.getOnlyOneItemPerStack() ? "" : itemStacks[i].getNumOfItems().ToString();
                     }
                     else
                     {
@@ -592,7 +592,7 @@ public class InventoryViewComponent : MonoBehaviour
                             iconSlot.GetComponent<Image>().color = color;
 
                             iconSlot.transform.Find("ItemImage").gameObject.GetComponent<Image>().sprite = itemStacks[i].getItem().getPicture();
-                            iconSlot.transform.Find("ItemText").gameObject.GetComponent<TMP_Text>().text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : itemStacks[i].getNumOfItems().ToString();
+                            iconSlot.transform.Find("ItemText").gameObject.GetComponent<TMP_Text>().text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 || inventoryComponent.getOnlyOneItemPerStack() ? "" : itemStacks[i].getNumOfItems().ToString();
                         }
 
                         slotImage.sprite = nothing;

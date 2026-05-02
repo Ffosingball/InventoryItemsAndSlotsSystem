@@ -20,6 +20,9 @@ public class InventoryComponent : MonoBehaviour
     [SerializeField] private InventoryConfiguration inventoryConfiguration;
     [Tooltip("If less than 0 then no weight limit!")]
     [SerializeField] private float inventoryWeightLimit = 1000f;
+    [Tooltip("If stack limit is on in configuartion but you still want to use that configuration but without stack limit then just turn this on!")]
+    [SerializeField] private bool noStackLimit = false;
+    [SerializeField] private bool onlyOneItemPerStack=false;
 
     //All three of this data structures store the same inventory items
     //but used in different situations
@@ -132,6 +135,26 @@ public class InventoryComponent : MonoBehaviour
     public int getNumOfItemsInTheInventory()
     {
         return totalItems;
+    }
+
+    public void setNoStackLimit(bool value)
+    {
+        noStackLimit = value;
+    }
+
+    public bool getNoStackLimit()
+    {
+        return noStackLimit;
+    }
+
+    public void setOnlyOneItemPerStack(bool value)
+    {
+        onlyOneItemPerStack = value;
+    }
+
+    public bool getOnlyOneItemPerStack()
+    {
+        return onlyOneItemPerStack;
     }
 
 
@@ -380,10 +403,16 @@ public class InventoryComponent : MonoBehaviour
             {
                 if(itemsPositions[arrPosition]!=null)
                 {
+                    if(onlyOneItemPerStack)
+                    {
+                        placementResult.stackReplaced = itemStack;
+                        return placementResult;
+                    }
+
                     if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
                     {
                         //Check if weight limit reached if applicable
-                        if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>inventoryWeightLimit)
+                        if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>=inventoryWeightLimit)
                         {
                             int addAmount = itemStack.getNumOfItems()-(int)((totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())-inventoryWeightLimit)/itemStack.getItem().getItemWeight());
                             itemsPositions[arrPosition].IncreaseAmountBy(addAmount);
@@ -420,6 +449,12 @@ public class InventoryComponent : MonoBehaviour
             //Check if slot at the provided position has itemStack
             if(itemsPositions[arrPosition]!=null && inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
             {
+                if(onlyOneItemPerStack)
+                {
+                    placementResult.stackReplaced = itemStack;
+                    return placementResult;
+                }
+
                 //In this case remove it from the slot
                 //If provided itemStack contains the same item as in the slot
                 //then try to merge them
@@ -427,7 +462,7 @@ public class InventoryComponent : MonoBehaviour
                 if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
                 {
                     //Check if weight limit reached if applicable
-                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>inventoryWeightLimit)
+                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>=inventoryWeightLimit)
                     {
                         int addAmount = itemStack.getNumOfItems()-(int)((totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())-inventoryWeightLimit)/itemStack.getItem().getItemWeight());
                         itemsPositions[arrPosition].IncreaseAmountBy(addAmount);
@@ -458,7 +493,7 @@ public class InventoryComponent : MonoBehaviour
                 else
                 {
                     //Otherwise check if itemStackLimit is off then
-                    if(!inventoryConfiguration.itemStacksLimit)
+                    if(!inventoryConfiguration.itemStacksLimit || noStackLimit)
                     {
                         //Set that itemStack at the slot as replaced
                         removeItem = true;
@@ -480,7 +515,7 @@ public class InventoryComponent : MonoBehaviour
                 if(removeItem)
                 {
                     //Check if weight limit reached if applicable
-                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight-placementResult.stackReplaced.getTotalWeight()+itemStack.getTotalWeight()>inventoryWeightLimit)
+                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight-placementResult.stackReplaced.getTotalWeight()+itemStack.getTotalWeight()>=inventoryWeightLimit)
                     {
                         placementResult.weightLimitReached = true;
                         OnChangeUpdateView?.Invoke();
@@ -512,8 +547,17 @@ public class InventoryComponent : MonoBehaviour
                     if(addAmount>0)
                     {
                         ItemStack newItemStack = new ItemStack(itemStack.getItem(),inventoryConfiguration,-1);
-                        newItemStack.IncreaseAmountBy(addAmount);
-                        itemStack.DecreaseAmountBy(addAmount);
+                        if(onlyOneItemPerStack)
+                        {
+                            newItemStack.setOnlyOneItemPerStack(true);
+                            newItemStack.IncreaseAmountBy(1);
+                            itemStack.DecreaseAmountBy(1);
+                        }
+                        else
+                        {
+                            newItemStack.IncreaseAmountBy(addAmount);
+                            itemStack.DecreaseAmountBy(addAmount);
+                        }
 
                         placementResult.stackReplaced = itemStack;
                         itemStack = newItemStack;
@@ -528,12 +572,24 @@ public class InventoryComponent : MonoBehaviour
             }
 
             //Check if stackLimit is off or stack limit is not reached
-            if(!inventoryConfiguration.itemStacksLimit || itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
+            if(!inventoryConfiguration.itemStacksLimit || noStackLimit || itemStack.getItem().getItemStackLimit()>GetNumberOfStacksOfThisItem(itemStack.getItem()))
             {   
                 ItemComponent newItem = itemStack.getItem();
                 //Check if dictionary has key of this type, if not then create it
                 if(!itemsInTheInventory.ContainsKey((newItem.getItemName(),newItem.getRareness())))
                     itemsInTheInventory.Add((newItem.getItemName(),newItem.getRareness()), new List<ItemStack>());
+
+                if(onlyOneItemPerStack)
+                {
+                    if(itemStack.getNumOfItems()>1)
+                    {
+                        ItemStack newItemStack = new ItemStack(itemStack.getItem(), inventoryConfiguration, -1, true);
+                        newItemStack.IncreaseAmountBy(1);
+                        itemStack.DecreaseAmountBy(1);
+                        placementResult.stackReplaced = itemStack;
+                        itemStack = newItemStack;
+                    }
+                }
 
                 //Insert item stack in the provided position
                 itemStack.setCellOccupied(arrPosition);
@@ -587,7 +643,7 @@ public class InventoryComponent : MonoBehaviour
             return -1;
 
         //Check if there are already some stacks of this exact item in the inventory
-        if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness())))
+        if(itemsInTheInventory.ContainsKey((item.getItemName(),item.getRareness()))  && !onlyOneItemPerStack)
         {
             //If so, then find those which are not empty and insert some amount
             //in that stacks
@@ -608,7 +664,7 @@ public class InventoryComponent : MonoBehaviour
                     }
 
                     //Check if items weight is on and this inventory has weight limit
-                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight>inventoryWeightLimit)
+                    if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight>=inventoryWeightLimit)
                     {
                         int itemsToRemove = (int)((totalItemsWeight-inventoryWeightLimit)/item.getItemWeight());
                         itemStack.DecreaseAmountBy(itemsToRemove);
@@ -637,7 +693,8 @@ public class InventoryComponent : MonoBehaviour
                 int result = InsertItemAt(i, item, amount);
                 if(result<-1)
                 {
-                    amount-=itemsPositions[i].getNumOfItems();
+                    if(itemsPositions[i]!=null)
+                        amount-=itemsPositions[i].getNumOfItems();
                     OnChangeUpdateView?.Invoke();
                     return amount;
                 }
@@ -687,7 +744,8 @@ public class InventoryComponent : MonoBehaviour
                     int result = InsertItemAt(i, item, amount);
                     if(result<-1)
                     {
-                        amount-=itemsPositions[i].getNumOfItems();
+                        if(itemsPositions[i]!=null)
+                            amount-=itemsPositions[i].getNumOfItems();
                         break;
                     }
                     else if(result==-1)
@@ -726,10 +784,15 @@ public class InventoryComponent : MonoBehaviour
     private int InsertItemAt(int arrPosition, ItemComponent item, int amount)
     {
         //Check if stackLimit is off or the limit is not reached
-        if(!inventoryConfiguration.itemStacksLimit || item.getItemStackLimit()>GetNumberOfStacksOfThisItem(item))
+        if(!inventoryConfiguration.itemStacksLimit || noStackLimit || item.getItemStackLimit()>GetNumberOfStacksOfThisItem(item))
         {
             //Then create new stack
-            ItemStack newItemStack = new ItemStack(item, inventoryConfiguration, arrPosition);
+            ItemStack newItemStack;
+            if(onlyOneItemPerStack)
+                newItemStack = new ItemStack(item, inventoryConfiguration, arrPosition, true);
+            else
+                newItemStack = new ItemStack(item, inventoryConfiguration, arrPosition);
+
             amount = newItemStack.IncreaseAmountBy(amount);
             totalItems++;
             totalItemsWeight+=newItemStack.getTotalWeight();
@@ -743,7 +806,7 @@ public class InventoryComponent : MonoBehaviour
             itemsInTheInventory[(item.getItemName(),item.getRareness())].Add(newItemStack);
 
             //Check if items weight is on and this inventory has weight limit
-            if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight>inventoryWeightLimit)
+            if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight>=inventoryWeightLimit)
             {
                 int itemsToRemove = (int)((totalItemsWeight-inventoryWeightLimit)/item.getItemWeight());
                 totalItemsWeight-=itemsToRemove*item.getItemWeight();
@@ -1016,7 +1079,7 @@ public class InventoryComponent : MonoBehaviour
 
         if(originalStack!=null)
         {
-            ItemStack copiedStack = new ItemStack(originalStack.getItem(), inventoryConfiguration, originalStack.getCellOccupied());
+            ItemStack copiedStack = new ItemStack(originalStack.getItem(), inventoryConfiguration, originalStack.getCellOccupied(), originalStack.getOnlyOneItemPerStack());
             copiedStack.IncreaseAmountBy(originalStack.getNumOfItems());
             return copiedStack;
         }

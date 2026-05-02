@@ -827,6 +827,7 @@ MonoBehaviour:
   inventoryName: InfiniteChest
   inventoryConfiguration: {fileID: 11400000, guid: 3400fbcd7d4bee34a9f813afbb9878c9, type: 2}
   inventoryWeightLimit: -1
+  noStackLimit: 1
 --- !u!4 &117457287
 Transform:
   m_ObjectHideFlags: 0
@@ -4467,6 +4468,7 @@ MonoBehaviour:
   inventoryName: ChestInvent
   inventoryConfiguration: {fileID: 11400000, guid: 3400fbcd7d4bee34a9f813afbb9878c9, type: 2}
   inventoryWeightLimit: 300
+  noStackLimit: 0
 --- !u!4 &641693562
 Transform:
   m_ObjectHideFlags: 0
@@ -11211,6 +11213,7 @@ MonoBehaviour:
   inventoryName: MainCharInventory
   inventoryConfiguration: {fileID: 11400000, guid: 3400fbcd7d4bee34a9f813afbb9878c9, type: 2}
   inventoryWeightLimit: 2000
+  noStackLimit: 0
 --- !u!4 &1883513625
 Transform:
   m_ObjectHideFlags: 0
