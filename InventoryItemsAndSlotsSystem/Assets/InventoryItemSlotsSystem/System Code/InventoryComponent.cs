@@ -178,7 +178,7 @@ public class InventoryComponent : MonoBehaviour
             {
                 for(int x=0; x<itemToPlace.getItemSize().x; x++)
                 {
-                    if(slotPosition.x+x>inventoryWidth || slotPosition.y+y>inventoryHeight)
+                    if(slotPosition.x+x>=inventoryWidth || slotPosition.y+y>=inventoryHeight)
                         return false;
                     else if(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)]!=null)
                         return false;
@@ -206,7 +206,7 @@ public class InventoryComponent : MonoBehaviour
             {
                 for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
                 {
-                    if(slotPosition.x+x>listDimensions.x || slotPosition.y+y>listDimensions.x)
+                    if(slotPosition.x+x>=listDimensions.x || slotPosition.y+y>=listDimensions.y)
                         return false;
                     else if(listOfStacks[slotPosition.x+x+((slotPosition.y+y)*listDimensions.x)]!=null)
                         return false;
@@ -215,6 +215,26 @@ public class InventoryComponent : MonoBehaviour
 
             return true;
         }
+    }
+
+
+
+    private bool IsEnoughSpaceForItemInfiniteOnly(ItemStack itemStackToPlace, Vector2Int slotPosition)
+    {
+        for(int y=0; y<itemStackToPlace.getItem().getItemSize().y; y++)
+        {
+            for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
+            {
+                if(slotPosition.x+x>=inventoryWidth)
+                    return false;
+                else if(slotPosition.y+y>=inventoryHeight)
+                    return true;
+                else if(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)]!=null)
+                    return false;
+            }
+        }
+
+        return true;
     }
 
 
@@ -228,16 +248,20 @@ public class InventoryComponent : MonoBehaviour
     {
         if(isInventoryInfinite)
         {
-            if(!IsEnoughSpaceForItem(itemStackToPlace, new Vector2Int(slotPosition%inventoryWidth, slotPosition/inventoryHeight)))
+            isInventoryInfinite=false;
+            if(!IsEnoughSpaceForItemInfiniteOnly(itemStackToPlace, new Vector2Int(slotPosition%inventoryWidth, slotPosition/inventoryWidth)))
             {
                 bool foundPosition=false;
                 for(int i=0; i<itemsPositions.Count; i++)
                 {
-                    if(IsEnoughSpaceForItem(itemStackToPlace, new Vector2Int(i%inventoryWidth, i/inventoryHeight)))
+                    if(itemsPositions[i]==null)
                     {
-                        slotPosition=i;
-                        foundPosition=true;
-                        break;
+                        if(IsEnoughSpaceForItemInfiniteOnly(itemStackToPlace, new Vector2Int(i%inventoryWidth, i/inventoryWidth)))
+                        {
+                            slotPosition=i;
+                            foundPosition=true;
+                            break;
+                        }
                     }
                 }
 
@@ -252,19 +276,30 @@ public class InventoryComponent : MonoBehaviour
                     }
                 }
             }
+            isInventoryInfinite=true;
         }
         
-        List<int> allPositionsList = new List<int>();
+        //Debug.Log("Placing!");
+        itemStackToPlace.setCellOccupied(slotPosition);
         for(int y=0; y<itemStackToPlace.getItem().getItemSize().y; y++)
         {
+            if(slotPosition+(y*inventoryWidth)>=itemsPositions.Count)
+            {
+                inventoryHeight++;
+                for(int i=0; i<inventoryWidth; i++)
+                {
+                    itemsPositions.Add(null);
+                }
+            }
+            //else
+            //   Debug.Log("Failed: "+(slotPosition+(y*inventoryWidth))+"; size: "+itemsPositions.Count);
+
             for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
             {
+                //Debug.Log("Counter: "+(slotPosition+x+(y*inventoryWidth))+"; size: "+itemsPositions.Count);
                 itemsPositions[slotPosition+x+(y*inventoryWidth)]=itemStackToPlace;
-                allPositionsList.Add(slotPosition+x+(y*inventoryWidth));
             }
         }
-
-        itemStackToPlace.setCellsOccupied(allPositionsList);
     }
 
 
@@ -274,11 +309,16 @@ public class InventoryComponent : MonoBehaviour
     //Slot position in the array
     private void RemoveItemsBlockByPosition(int slotPosition, Vector2Int inventoryDimensions)
     {
-        List<int> positionsToClear = itemsPositions[slotPosition].getCellsOccupied();
+        int initPositionToClear = itemsPositions[slotPosition].getCellOccupied();
+        ItemComponent itemToRemove = itemsPositions[slotPosition].getItem();
+        //Debug.Log("Position: "+initPositionToClear+"; dimensions: "+inventoryDimensions+"; itemsPos.Count: "+itemsPositions.Count);
 
-        foreach(int position in positionsToClear)
+        for(int y=0; y<itemToRemove.getItemSize().y; y++)
         {
-            itemsPositions[position] = null;
+            for(int x=0; x<itemToRemove.getItemSize().x; x++)
+            {
+                itemsPositions[initPositionToClear+x+(y*inventoryDimensions.x)]=null;
+            }
         }
     }
 
@@ -328,8 +368,8 @@ public class InventoryComponent : MonoBehaviour
                 //If empty slot not found, then replace item at which mouse is over
                 if(!foundEmptySpace)
                 {
-                    position.x = sortedPositions[arrPosition].getCellsOccupied()[0]%inventoryWidth;
-                    position.y = sortedPositions[arrPosition].getCellsOccupied()[0]/inventoryWidth;
+                    position.x = sortedPositions[arrPosition].getCellOccupied()%inventoryWidth;
+                    position.y = sortedPositions[arrPosition].getCellOccupied()/inventoryWidth;
                     arrPosition = position.y*inventoryWidth+position.x;
                 }
             }
@@ -338,7 +378,42 @@ public class InventoryComponent : MonoBehaviour
             //do not try to place item
             if(inventoryConfiguration.inventoryType!=InventoryType.SingleCelled && !IsEnoughSpaceForItem(itemStack, position))
             {
+                if(itemsPositions[arrPosition]!=null)
+                {
+                    if(itemsPositions[arrPosition].getItem()==itemStack.getItem())
+                    {
+                        //Check if weight limit reached if applicable
+                        if(inventoryConfiguration.itemsHasAWeight && inventoryWeightLimit>0 && totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())>inventoryWeightLimit)
+                        {
+                            int addAmount = itemStack.getNumOfItems()-(int)((totalItemsWeight+(itemStack.getNumOfItems()*itemStack.getItem().getItemWeight())-inventoryWeightLimit)/itemStack.getItem().getItemWeight());
+                            itemsPositions[arrPosition].IncreaseAmountBy(addAmount);
+                            totalItemsWeight += addAmount*itemStack.getItem().getItemWeight();
+                            itemStack.DecreaseAmountBy(addAmount);
+                            placementResult.weightLimitReached = true;
+                            OnChangeUpdateView?.Invoke();
+                            return placementResult;
+                        }
+                        else
+                        {
+                            int overflow = itemsPositions[arrPosition].IncreaseAmountBy(itemStack.getNumOfItems());
+                            if(overflow>0)
+                            {
+                                itemStack.DecreaseAmountBy(itemStack.getNumOfItems());
+                                itemStack.IncreaseAmountBy(overflow);
+                                placementResult.stackReplaced = itemStack;
+                                OnChangeUpdateView?.Invoke();
+                                return placementResult;
+                            }
+
+                            OnChangeUpdateView?.Invoke();
+                            return placementResult;
+                        }
+                    }
+                }
+                
                 placementResult.areaIsOccupied = true;
+                placementResult.stackReplaced = itemStack;
+                OnChangeUpdateView?.Invoke();
                 return placementResult;
             }
 
@@ -461,7 +536,7 @@ public class InventoryComponent : MonoBehaviour
                     itemsInTheInventory.Add((newItem.getItemName(),newItem.getRareness()), new List<ItemStack>());
 
                 //Insert item stack in the provided position
-                itemStack.getCellsOccupied()[0]=arrPosition;
+                itemStack.setCellOccupied(arrPosition);
                 if(showItemsSorted)
                     addToSortedFunction(itemStack, sortedPositions);
                 itemsInTheInventory[(newItem.getItemName(),newItem.getRareness())].Add(itemStack);
@@ -729,8 +804,7 @@ public class InventoryComponent : MonoBehaviour
                         break;
 
                     itemsPositions[clearedPosition] = itemsPositions[i];
-                    itemsPositions[clearedPosition].getCellsOccupied().RemoveAt(0);
-                    itemsPositions[clearedPosition].getCellsOccupied().Add(clearedPosition);
+                    itemsPositions[clearedPosition].setCellOccupied(clearedPosition);
                 }
 
                 itemsPositions.RemoveAt(i);
@@ -848,14 +922,14 @@ public class InventoryComponent : MonoBehaviour
                 {
                     if(showItemsSorted)
                     {
-                        removeFromSortedFunction(itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]], sortedPositions);
+                        removeFromSortedFunction(itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied()], sortedPositions);
                     }
 
-                    totalItemsWeight-=itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]].getTotalWeight();
+                    totalItemsWeight-=itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied()].getTotalWeight();
                     if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
-                        itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]]=null;
+                        itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied()]=null;
                     else
-                        RemoveItemsBlockByPosition(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellsOccupied()[0]);
+                        RemoveItemsBlockByPosition(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied());
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
                     totalItems--;
                 }
@@ -942,7 +1016,7 @@ public class InventoryComponent : MonoBehaviour
 
         if(originalStack!=null)
         {
-            ItemStack copiedStack = new ItemStack(originalStack.getItem(), inventoryConfiguration, originalStack.getCellsOccupied());
+            ItemStack copiedStack = new ItemStack(originalStack.getItem(), inventoryConfiguration, originalStack.getCellOccupied());
             copiedStack.IncreaseAmountBy(originalStack.getNumOfItems());
             return copiedStack;
         }
@@ -975,11 +1049,11 @@ public class InventoryComponent : MonoBehaviour
             //If slot at the given position not null then delete itemStack at that slot
             if(stackToRemove!=null)
             {
-                totalItemsWeight-=itemsPositions[stackToRemove.getCellsOccupied()[0]].getTotalWeight();
+                totalItemsWeight-=itemsPositions[stackToRemove.getCellOccupied()].getTotalWeight();
                 if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
-                    itemsPositions[stackToRemove.getCellsOccupied()[0]]=null;
+                    itemsPositions[stackToRemove.getCellOccupied()]=null;
                 else
-                    RemoveItemsBlockByPosition(stackToRemove.getCellsOccupied()[0]);
+                    RemoveItemsBlockByPosition(stackToRemove.getCellOccupied());
                 itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
                 totalItems--;
 
@@ -1018,7 +1092,7 @@ public class InventoryComponent : MonoBehaviour
             {
                 foreach(ItemStack stack in kvp.Value)
                 {
-                    stack.getCellsOccupied().Clear();
+                    stack.setCellOccupied(-1);
                 }
             }
 
@@ -1038,7 +1112,11 @@ public class InventoryComponent : MonoBehaviour
                     for(int i=0; i<itemsPositions.Count; i++)
                     {
                         resizedItemsPositions[i] = itemsPositions[i];
-                        resizedItemsPositions[i].getCellsOccupied().Add(i);
+                        if(resizedItemsPositions[i]!=null)
+                        {
+                            if(resizedItemsPositions[i].getCellOccupied()==-1)
+                                resizedItemsPositions[i].setCellOccupied(i);
+                        }
                     }
                 }
                 else
@@ -1046,10 +1124,15 @@ public class InventoryComponent : MonoBehaviour
                     int newI = 0;
                     for(int i=0; i<itemsPositions.Count; i++)
                     {
-                        if(i%previousWidth==0)
+                        if(i%previousWidth==0 && i>0)
                             newI+=inventoryWidth;
-                        resizedItemsPositions[newI+(i/previousWidth)] = itemsPositions[i];
-                        resizedItemsPositions[newI+(i/previousWidth)].getCellsOccupied().Add(newI+(i/previousWidth));
+                        resizedItemsPositions[newI+(i%previousWidth)] = itemsPositions[i];
+                        //Debug.Log((newI+(i%previousWidth))+" = " + i);
+                        if(resizedItemsPositions[newI+(i%previousWidth)]!=null)
+                        {
+                            if(resizedItemsPositions[newI+(i%previousWidth)].getCellOccupied()==-1)
+                                resizedItemsPositions[newI+(i%previousWidth)].setCellOccupied(newI+(i%previousWidth));
+                        }
                     }
                 }
 
@@ -1076,7 +1159,11 @@ public class InventoryComponent : MonoBehaviour
                         if(itemsPositions[i]!=null)
                         {
                             resizedItemsPositions[i] = itemsPositions[i+positionsSkipped];
-                            resizedItemsPositions[i].getCellsOccupied().Add(i);
+                            if(resizedItemsPositions[i]!=null)
+                            {
+                                if(resizedItemsPositions[i].getCellOccupied()==-1)
+                                    resizedItemsPositions[i].setCellOccupied(i);
+                            }
                         }
                         else
                             positionsSkipped++;
@@ -1099,7 +1186,7 @@ public class InventoryComponent : MonoBehaviour
                             if(itemsPositions[i]!=null)
                             {
                                 itemStacksRemoved.Add(itemsPositions[i]);
-                                totalItemsWeight-=itemsPositions[itemsPositions[i].getCellsOccupied()[0]].getTotalWeight();
+                                totalItemsWeight-=itemsPositions[itemsPositions[i].getCellOccupied()].getTotalWeight();
                                 totalItems--;
                                 itemsInTheInventory[(itemsPositions[i].getItem().getItemName(),itemsPositions[i].getItem().getRareness())].Remove(itemsPositions[i]);
                                 if(itemsInTheInventory[(itemsPositions[i].getItem().getItemName(),itemsPositions[i].getItem().getRareness())].Count==0)
@@ -1123,7 +1210,7 @@ public class InventoryComponent : MonoBehaviour
                     int newListPosition = 0;
                     for(int j=0; j<itemsPositions.Count; j++)
                     {
-                        if(j%previousWidth==0)
+                        if(j%previousWidth==0 && j>0)
                             newListPosition+=inventoryWidth;
 
                         if(itemsPositions[j]!=null)
@@ -1131,7 +1218,6 @@ public class InventoryComponent : MonoBehaviour
                             if(itemStacksWhichWillStay.Contains(itemsPositions[j]))
                             {
                                 resizedItemsPositions[newListPosition+(j%previousWidth)] = itemsPositions[j];
-                                resizedItemsPositions[newListPosition+(j%previousWidth)].getCellsOccupied().Add(newListPosition+(j%previousWidth));
                             }
                             else
                             {
@@ -1139,7 +1225,7 @@ public class InventoryComponent : MonoBehaviour
                                 {
                                     itemStacksWhichWillStay.Add(itemsPositions[j]);
                                     resizedItemsPositions[newListPosition+(j%previousWidth)] = itemsPositions[j];
-                                    resizedItemsPositions[newListPosition+(j%previousWidth)].getCellsOccupied().Add(newListPosition+(j%previousWidth));
+                                    resizedItemsPositions[newListPosition+(j%previousWidth)].setCellOccupied(newListPosition+(j%previousWidth));
                                 }
                                 else
                                 {
@@ -1149,6 +1235,8 @@ public class InventoryComponent : MonoBehaviour
                                     itemsInTheInventory[(itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness())].Remove(itemsPositions[j]);
                                     if(itemsInTheInventory[(itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness())].Count==0)
                                         itemsInTheInventory.Remove((itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness()));
+                                    
+                                    itemsPositions[j].setCellOccupied(j);
                                     RemoveItemsBlockByPosition(j, new Vector2Int(previousWidth, previousHeight));
                                 }
                             }

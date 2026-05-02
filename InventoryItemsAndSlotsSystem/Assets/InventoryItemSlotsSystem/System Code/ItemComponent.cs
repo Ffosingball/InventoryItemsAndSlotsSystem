@@ -24,7 +24,7 @@ public class ItemComponent : MonoBehaviour
 
     [Header("Change only if inventory type is not sigle celled")]
     [Tooltip("Cannot be less then 1!")]
-    [SerializeField] private Vector2Int itemSize;
+    [SerializeField] private Vector2Int itemSize = new Vector2Int(1,1);
 
     //Getters and setters
     public int getMaxNumberOfBlocksInAStack()

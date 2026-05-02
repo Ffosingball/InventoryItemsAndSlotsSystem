@@ -48,6 +48,11 @@ public class InventoryManager : MonoBehaviour
         return inventoryOverWhichMouseIs;
     }
 
+    public ItemStack getPickedByMouseItemStack()
+    {
+        return pickedByMouse;
+    }
+
 
 
     private void Start()
@@ -193,6 +198,10 @@ public class InventoryManager : MonoBehaviour
                     {//Failed to insert
                         Debug.Log("Stack cap reached! Cannot insert more items of this type!");
                     }
+                    else if(placementResult.areaIsOccupied)
+                    {
+                        Debug.Log("Area is already occupied!");
+                    }
                     else if(placementResult.weightLimitReached)
                     {//Failed to insert
                         Debug.Log("Weight limit reached! Cannot insert more items!");
@@ -289,6 +298,8 @@ public class InventoryManager : MonoBehaviour
                                 Debug.Log("Stack cap reached! Cannot insert more items of this type!");
                             else if(placementResult.weightLimitReached)
                                 Debug.Log("Weight limit reached! Cannot insert more items!");
+                            else if(placementResult.areaIsOccupied)
+                                Debug.Log("Area is already occupied!");
                             else
                                 pickedByMouse.DecreaseAmountBy(1);
 
@@ -338,6 +349,7 @@ public class InventoryManager : MonoBehaviour
             newInventoryView.setInventoryComponent(inventoryComponent);
             newInventoryView.setPosition(position);
             newInventoryView.setInventorySlot(inventorySlot);
+            newInventoryView.setInventoryManager(this);
             
             newInventoryView.CreateView();
             newInventoryView.UpdateView();

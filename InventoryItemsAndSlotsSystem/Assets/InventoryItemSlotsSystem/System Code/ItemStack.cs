@@ -10,8 +10,9 @@ public class ItemStack
     private float totalWeight=0f;
     //The item of the stack
     private ItemComponent item;
-    //List of slot positions which are occupied in the inventory
-    private List<int> cellsOccupied;
+    //Stores place where the itemStack is placed in the list,
+    //or top left corner position if inventory typy is not single celled
+    private int cellOccupied;
     private InventoryConfiguration inventoryConfiguration;
     //Is stack full or not
     private bool isFull=false;
@@ -37,14 +38,14 @@ public class ItemStack
         return isFull;
     }
 
-    public List<int> getCellsOccupied()
+    public int getCellOccupied()
     {
-        return cellsOccupied;
+        return cellOccupied;
     }
 
-    public void setCellsOccupied(List<int> cellsOccupied)
+    public void setCellOccupied(int cellOccupied)
     {
-        this.cellsOccupied = cellsOccupied;
+        this.cellOccupied = cellOccupied;
     }
 
 
@@ -53,17 +54,7 @@ public class ItemStack
     {
         this.item = item;
         this.inventoryConfiguration = inventoryConfiguration;
-        cellsOccupied = new List<int>();
-        cellsOccupied.Add(cellOccupied);
-    }
-
-
-    //Constructor if items can take more than one cell space
-    public ItemStack(ItemComponent item, InventoryConfiguration inventoryConfiguration, List<int> cellsOccupied)
-    {
-        this.item = item;
-        this.cellsOccupied = cellsOccupied;
-        this.inventoryConfiguration = inventoryConfiguration;
+        this.cellOccupied=cellOccupied;
     }
 
 

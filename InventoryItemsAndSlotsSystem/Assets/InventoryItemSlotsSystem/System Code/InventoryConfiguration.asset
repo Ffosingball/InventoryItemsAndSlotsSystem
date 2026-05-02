@@ -14,14 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryConfiguration
   useFiveTierRareness: 1
   itemStacksLimit: 0
-  inventoryType: 0
+  inventoryType: 1
   arbitraryStackPlacement: 1
-  itemsHasAWeight: 1
+  itemsHasAWeight: 0
   visibleSlotsInHeight: 5
   marginBetweenSlots: 0.005
   outerMargin: 0.01
   slotSizePercentage: 0.03
   selectionOutlineColor: {r: 0.8113208, g: 0.8113208, b: 0.8113208, a: 1}
+  wrongSelectionOutlineColor: {r: 1, g: 0, b: 0, a: 1}
   selectionOutlineThikness: 6
   commonItemColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   uncommonItemColor: {r: 0.32, g: 0.57, b: 0.29, a: 1}

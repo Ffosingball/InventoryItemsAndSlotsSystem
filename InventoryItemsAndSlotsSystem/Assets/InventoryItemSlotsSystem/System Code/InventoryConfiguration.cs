@@ -31,6 +31,7 @@ public class InventoryConfiguration : ScriptableObject
     //Percentage of the pixel size of the screen
     public float slotSizePercentage = 0.03f;
     public Color selectionOutlineColor = Color.white;
+    public Color wrongSelectionOutlineColor = Color.red;
     public float selectionOutlineThikness = 4;
 
     //You may use sprites instead of colors for background.
@@ -42,4 +43,5 @@ public class InventoryConfiguration : ScriptableObject
     public Color epicItemColor = new Color(0.68f, 0.21f, 0.8f);
     public Color legendaryItemColor = new Color(0.86f, 0.61f, 0.17f);
     public Color emptySlotColor = new Color(0.2f, 0.2f, 0.2f);
+    public float alphaValueForMultiCelledSlots = 0.3f;
 }
