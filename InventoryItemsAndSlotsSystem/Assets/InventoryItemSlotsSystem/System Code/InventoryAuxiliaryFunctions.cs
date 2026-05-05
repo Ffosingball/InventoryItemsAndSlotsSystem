@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-//This is a place where you can place your custom sorting and/or search functions for the 
+//This is a place where you can place your custom sorting, search, restriction functions for the 
 //inventoryComponent
-public static class InventorySortingFunctions
+public static class InventoryAuxiliaryFunctions
 {
     //This method just calls sortInventoryByRarenessASCAfterByAmountDESC method
     //and reverses its result
@@ -446,5 +446,19 @@ public static class InventorySortingFunctions
     {
         list.Remove(stackToRemove);
         list.Add(null);
+    }
+
+
+
+    public static bool IsItemAWeapon(ItemComponent item)
+    {
+        return item.getItemType()==ItemType.Weapon;
+    }
+
+
+
+    public static bool IsItemRarenessRareOrHigher(ItemComponent item)
+    {
+        return item.getRareness()>=Rareness.Rare;
     }
 }

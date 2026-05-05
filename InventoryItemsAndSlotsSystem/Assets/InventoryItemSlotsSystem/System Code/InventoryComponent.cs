@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.Rendering;
 using System;
 using UnityEditor.Experimental.GraphView;
+using Unity.Mathematics;
 
 
 //This component represent the inventory itself, it has a list of slots which
@@ -11,6 +12,8 @@ public class InventoryComponent : MonoBehaviour
 {
     //When anything is changed in the inventory it will change view as well
     public event Action OnChangeUpdateView;
+    //True passed, false failed
+    public event Func<ItemComponent, bool> ItemRestrictions;
 
     [Tooltip("If inventoryInfinite is true it will add new row of slots to the inventory when there no free slot is left")]
     [SerializeField] private bool isInventoryInfinite = false;
@@ -352,6 +355,24 @@ public class InventoryComponent : MonoBehaviour
 
 
 
+    private bool ApplyRestrictions(ItemComponent item)
+    {
+        if(ItemRestrictions != null)
+        {
+            foreach (Func<ItemComponent, bool> func in ItemRestrictions.GetInvocationList())
+            {
+                if(!func(item))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+
     //This function takes itemStack and position where it should be placed
     //and tries to place it. After it will return the result of the itemStack placement
     public NewItemPlacementResult PlaceItemStackToInventory(ItemStack itemStack, Vector2Int position)
@@ -366,7 +387,12 @@ public class InventoryComponent : MonoBehaviour
             if(itemsPositions.Count<=arrPosition || arrPosition<0)
             {
                 placementResult.invalidPosition=true;
-                OnChangeUpdateView?.Invoke();
+                return placementResult;
+            }
+
+            if(!ApplyRestrictions(itemStack.getItem()))
+            {
+                placementResult.failedItemRestrictions=true;
                 return placementResult;
             }
 
@@ -640,6 +666,9 @@ public class InventoryComponent : MonoBehaviour
     {
         //Check that amount is valid
         if(amount<1)
+            return -1;
+
+        if(!ApplyRestrictions(item))
             return -1;
 
         //Check if there are already some stacks of this exact item in the inventory
@@ -1351,12 +1380,12 @@ public class InventoryComponent : MonoBehaviour
     //These two are just redirections to search functions
     private List<ItemStack> SearchRedirect(List<ItemStack> list)
     {
-        return InventorySortingFunctions.LinearSearchByName(list, searchTarget);
+        return InventoryAuxiliaryFunctions.LinearSearchByName(list, searchTarget);
     }
 
     private void AddSearchRedirect(ItemStack stack, List<ItemStack> list)
     {
-        InventorySortingFunctions.addItemToSearchResultByName(stack, list, searchTarget);
+        InventoryAuxiliaryFunctions.addItemToSearchResultByName(stack, list, searchTarget);
     }
 
 
@@ -1366,6 +1395,6 @@ public class InventoryComponent : MonoBehaviour
     public void SearchByNamePart(string namePart)
     {
         searchTarget = namePart;
-        ShowInventorySorted(SearchRedirect, AddSearchRedirect, InventorySortingFunctions.simpleRemoveFuction);
+        ShowInventorySorted(SearchRedirect, AddSearchRedirect, InventoryAuxiliaryFunctions.simpleRemoveFuction);
     }
 }

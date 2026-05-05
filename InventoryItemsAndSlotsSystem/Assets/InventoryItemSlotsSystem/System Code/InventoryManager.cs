@@ -188,6 +188,7 @@ public class InventoryManager : MonoBehaviour
                         mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
                         selectedItemStack = null;
                         itemPickedAt = inventoryOverWhichMouseIs;
+                        pickedByMouse.setOnlyOneItemPerStack(false);
                     }
                 }
                 else
@@ -197,6 +198,10 @@ public class InventoryManager : MonoBehaviour
                     if(placementResult.stackCapReached)
                     {//Failed to insert
                         Debug.Log("Stack cap reached! Cannot insert more items of this type!");
+                    }
+                    else if(placementResult.failedItemRestrictions)
+                    {
+                        Debug.Log("This item cannot be inserted in this inventory!");
                     }
                     else if(placementResult.areaIsOccupied)
                     {
@@ -212,6 +217,7 @@ public class InventoryManager : MonoBehaviour
                     {//Items were swapped
                         pickedByMouse = placementResult.stackReplaced;
                         itemPickedAt = inventoryOverWhichMouseIs;
+                        pickedByMouse.setOnlyOneItemPerStack(false);
                         mouseItemIcon.GetComponent<SpriteRenderer>().sprite = pickedByMouse.getItem().getPicture();
                         mouseItemIcon.transform.Find("ItemText").GetComponent<TMP_Text>().text = pickedByMouse.getItem().getMaxNumberOfBlocksInAStack()==1 ? "" : pickedByMouse.getNumOfItems().ToString();
                     }
@@ -275,6 +281,7 @@ public class InventoryManager : MonoBehaviour
                         //Otherwise pick item from the slot
                         pickedByMouse = selectedItemStack;
                         inventoryOverWhichMouseIs.RemoveItemStackByPosition(slotPosition);
+                        pickedByMouse.setOnlyOneItemPerStack(false);
                     }
 
                     //Update mouse icon
@@ -300,6 +307,8 @@ public class InventoryManager : MonoBehaviour
                                 Debug.Log("Weight limit reached! Cannot insert more items!");
                             else if(placementResult.areaIsOccupied)
                                 Debug.Log("Area is already occupied!");
+                            else if(placementResult.failedItemRestrictions)
+                                Debug.Log("This item cannot be inserted in this inventory!");
                             else
                                 pickedByMouse.DecreaseAmountBy(1);
 
@@ -314,6 +323,10 @@ public class InventoryManager : MonoBehaviour
                                 Debug.Log("Stack cap reached! Cannot insert more items of this type!");
                             else if(placementResult.weightLimitReached)
                                 Debug.Log("Weight limit reached! Cannot insert more items!");
+                            else if(placementResult.areaIsOccupied)
+                                Debug.Log("Area is already occupied!");
+                            else if(placementResult.failedItemRestrictions)
+                                Debug.Log("This item cannot be inserted in this inventory!");
                             else
                             {
                                 pickedByMouse = null;

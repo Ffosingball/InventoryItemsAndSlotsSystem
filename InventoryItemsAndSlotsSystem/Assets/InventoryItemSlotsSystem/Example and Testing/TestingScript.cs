@@ -311,7 +311,7 @@ public class TestingScript : MonoBehaviour
     public void ShowSortByRarenessDESC()
     {
         if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
-            selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessDESCAfterByAmountASC,InventorySortingFunctions.addItemToSortedListByRarenessDESC,InventorySortingFunctions.simpleRemoveFuction);
+            selectedInventory.ShowInventorySorted(InventoryAuxiliaryFunctions.sortInventoryByRarenessDESCAfterByAmountASC,InventoryAuxiliaryFunctions.addItemToSortedListByRarenessDESC,InventoryAuxiliaryFunctions.simpleRemoveFuction);
     }
 
 
@@ -319,7 +319,7 @@ public class TestingScript : MonoBehaviour
     public void ShowSortByRarenessASC()
     {
         if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
-            selectedInventory.ShowInventorySorted(InventorySortingFunctions.sortInventoryByRarenessASCAfterByAmountDESC,InventorySortingFunctions.addItemToSortedListByRarenessASC,InventorySortingFunctions.simpleRemoveFuction);
+            selectedInventory.ShowInventorySorted(InventoryAuxiliaryFunctions.sortInventoryByRarenessASCAfterByAmountDESC,InventoryAuxiliaryFunctions.addItemToSortedListByRarenessASC,InventoryAuxiliaryFunctions.simpleRemoveFuction);
     }
 
 
@@ -336,5 +336,35 @@ public class TestingScript : MonoBehaviour
     {
         if(selectedInventory.getInventoryConfiguration().inventoryType==InventoryType.SingleCelled)
             selectedInventory.SearchByNamePart(searchInput.text);
+    }
+
+
+
+    public void ApplyWeaponRestriction()
+    {
+        selectedInventory.ItemRestrictions-=InventoryAuxiliaryFunctions.IsItemAWeapon;
+        selectedInventory.ItemRestrictions+=InventoryAuxiliaryFunctions.IsItemAWeapon;
+    }
+
+
+
+    public void RemoveWeaponRestriction()
+    {
+        selectedInventory.ItemRestrictions-=InventoryAuxiliaryFunctions.IsItemAWeapon;
+    }
+
+
+
+    public void ApplyRarenessRestriction()
+    {
+        selectedInventory.ItemRestrictions-=InventoryAuxiliaryFunctions.IsItemRarenessRareOrHigher;
+        selectedInventory.ItemRestrictions+=InventoryAuxiliaryFunctions.IsItemRarenessRareOrHigher;
+    }
+
+
+
+    public void RemoveRarenessRestriction()
+    {
+        selectedInventory.ItemRestrictions-=InventoryAuxiliaryFunctions.IsItemRarenessRareOrHigher;
     }
 }

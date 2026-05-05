@@ -41,4 +41,5 @@ public class NewItemPlacementResult
     public bool stackCapReached=false;
     public bool weightLimitReached=false;
     public bool areaIsOccupied=false;
+    public bool failedItemRestrictions = false;
 }
