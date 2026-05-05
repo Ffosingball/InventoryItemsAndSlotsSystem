@@ -1731,6 +1731,7 @@ MonoBehaviour:
   itemWeight: 1
   itemStackLimit: 3
   itemSize: {x: 1, y: 1}
+  cellsOccupiedString: 
 --- !u!4 &270443180
 Transform:
   m_ObjectHideFlags: 0
@@ -4677,6 +4678,7 @@ MonoBehaviour:
   itemWeight: 10
   itemStackLimit: 2
   itemSize: {x: 2, y: 1}
+  cellsOccupiedString: 
 --- !u!4 &703740247
 Transform:
   m_ObjectHideFlags: 0
@@ -6620,6 +6622,7 @@ MonoBehaviour:
   itemWeight: 10
   itemStackLimit: 4
   itemSize: {x: 2, y: 2}
+  cellsOccupiedString: 
 --- !u!4 &992065706
 Transform:
   m_ObjectHideFlags: 0
@@ -9869,6 +9872,11 @@ MonoBehaviour:
   itemWeight: 4
   itemStackLimit: 5
   itemSize: {x: 3, y: 3}
+  cellsOccupiedString: '010
+
+    111
+
+    010'
 --- !u!4 &1392433810
 Transform:
   m_ObjectHideFlags: 0
@@ -11114,6 +11122,7 @@ MonoBehaviour:
   itemWeight: 8
   itemStackLimit: 4
   itemSize: {x: 1, y: 2}
+  cellsOccupiedString: 
 --- !u!4 &1575910156
 Transform:
   m_ObjectHideFlags: 0
@@ -11465,6 +11474,7 @@ MonoBehaviour:
   itemWeight: 0.5
   itemStackLimit: 6
   itemSize: {x: 3, y: 3}
+  cellsOccupiedString: 
 --- !u!4 &1676428549
 Transform:
   m_ObjectHideFlags: 0
@@ -11783,6 +11793,7 @@ MonoBehaviour:
   itemWeight: 2
   itemStackLimit: 6
   itemSize: {x: 2, y: 1}
+  cellsOccupiedString: 
 --- !u!4 &1752492903
 Transform:
   m_ObjectHideFlags: 0
@@ -12429,6 +12440,9 @@ MonoBehaviour:
   itemWeight: 3
   itemStackLimit: 10
   itemSize: {x: 3, y: 2}
+  cellsOccupiedString: '010
+
+    101'
 --- !u!4 &1953416164
 Transform:
   m_ObjectHideFlags: 0

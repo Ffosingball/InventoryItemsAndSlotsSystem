@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 
@@ -25,6 +26,17 @@ public class ItemComponent : MonoBehaviour
     [Header("Change only if inventory type is not sigle celled")]
     [Tooltip("Cannot be less then 1!")]
     [SerializeField] private Vector2Int itemSize = new Vector2Int(1,1);
+
+    [Header("Change only if inventory type is any size type")]
+    //Used only in the inspector
+    //String should be like this: for example item size is 3x3
+    //111
+    //101
+    //111
+    //Item with the hole in the middle, no spaces, no extra letters, \n for the next row
+    [Multiline][SerializeField] string cellsOccupiedString;
+    
+    private bool[] itemCellsOccupied;
 
     //Getters and setters
     public int getMaxNumberOfBlocksInAStack()
@@ -107,6 +119,22 @@ public class ItemComponent : MonoBehaviour
         return itemStackLimit;
     }
 
+    //It will succed only if provided size of the array is equal to the number of cells in the item
+    //it can be set only once! If you want to change it you have to create new item
+    public void setCellsOccupiedArray(bool[] value)
+    {
+        if(value.Length==itemSize.x*itemSize.y && itemCellsOccupied==null)
+        {
+            itemCellsOccupied = value;
+        }
+    }
+
+    //If array is null then all cells will be occupied
+    public bool[] getCellsOccupiedArray()
+    {
+        return itemCellsOccupied;
+    }
+
 
 
     private void Start()
@@ -114,5 +142,58 @@ public class ItemComponent : MonoBehaviour
         //Initialize item
         if(itemName==null)
             itemName = System.Guid.NewGuid().ToString();
+
+        if(itemCellsOccupied==null && cellsOccupiedString!=null)
+        {
+            if(cellsOccupiedString.Length>=itemSize.x*itemSize.y)
+            {
+                itemCellsOccupied = new bool[itemSize.x*itemSize.y];
+                int arrX = 0;
+                int arrY = 0;
+                bool done = false;
+                for(int i=0; i<cellsOccupiedString.Length; i++)
+                {
+                    switch(cellsOccupiedString[i])
+                    {
+                        case '1':
+                        {
+                            if(arrX<itemSize.x)
+                                itemCellsOccupied[arrX+arrY*itemSize.x] = true;
+                            
+                            arrX++;
+                            break;
+                        }
+                        case '0':
+                        {
+                            if(arrX<itemSize.x)
+                                itemCellsOccupied[arrX+arrY*itemSize.x] = false;
+                            
+                            arrX++;
+                            break;
+                        }
+                        case '\n':
+                        {
+                            arrY++;
+                            arrX=0;
+                            if(arrY>=itemSize.y)
+                                done=true;
+                            break;
+                        }
+                        default:
+                        {
+                            done=true;
+                            itemCellsOccupied = null;
+                            break;
+                        }
+                    }
+
+                    if(arrX+arrY*itemSize.x>=itemSize.x*itemSize.y)
+                        done=true;
+
+                    if(done)
+                        break;
+                }
+            }
+        }
     }
 }
