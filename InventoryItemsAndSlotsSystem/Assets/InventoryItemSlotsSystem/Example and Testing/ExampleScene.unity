@@ -1727,6 +1727,7 @@ MonoBehaviour:
   itemName: Apple
   itemType: 2
   picture: {fileID: 21300000, guid: e90317dccb0f8fb459c2d6299254c0c8, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: e90317dccb0f8fb459c2d6299254c0c8, type: 3}
   rareness: 0
   itemWeight: 1
   itemStackLimit: 3
@@ -4195,7 +4196,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.441, y: 0}
   m_AnchorMax: {x: 0.59400004, y: 0.19600001}
-  m_AnchoredPosition: {x: -0.7750015, y: 0.60998535}
+  m_AnchoredPosition: {x: -0.7749939, y: 0.60998535}
   m_SizeDelta: {x: -1.5499992, y: 1.2200012}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &622153022
@@ -4674,6 +4675,7 @@ MonoBehaviour:
   itemName: Magical gun
   itemType: 0
   picture: {fileID: 21300000, guid: 3eff5d06c1448674e862164779264c70, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: 3eff5d06c1448674e862164779264c70, type: 3}
   rareness: 4
   itemWeight: 10
   itemStackLimit: 2
@@ -6618,6 +6620,7 @@ MonoBehaviour:
   itemName: Shiny Rock
   itemType: 4
   picture: {fileID: 21300000, guid: 05c2730aeabd64d4dbe2fdbc4ae8a7db, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: 05c2730aeabd64d4dbe2fdbc4ae8a7db, type: 3}
   rareness: 2
   itemWeight: 10
   itemStackLimit: 4
@@ -9868,6 +9871,7 @@ MonoBehaviour:
   itemName: Brick
   itemType: 2
   picture: {fileID: 21300000, guid: 730f3fb918ad728498bc89110771ed84, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: 30e9547c0b53248429d79fd0d028d617, type: 3}
   rareness: 0
   itemWeight: 4
   itemStackLimit: 5
@@ -11118,6 +11122,7 @@ MonoBehaviour:
   itemName: Bucket
   itemType: 3
   picture: {fileID: 21300000, guid: bb261de031d634047ab39e091ee57f15, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: bb261de031d634047ab39e091ee57f15, type: 3}
   rareness: 2
   itemWeight: 8
   itemStackLimit: 4
@@ -11470,6 +11475,7 @@ MonoBehaviour:
   itemName: Grass
   itemType: 4
   picture: {fileID: 21300000, guid: 57fcbdf732ae40145861dcfb69ee6cab, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: 57fcbdf732ae40145861dcfb69ee6cab, type: 3}
   rareness: 0
   itemWeight: 0.5
   itemStackLimit: 6
@@ -11659,7 +11665,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.52742225, y: 0.53287923}
   m_AnchorMax: {x: 0.93822205, y: 0.94100004}
-  m_AnchoredPosition: {x: -3, y: 1.2999992}
+  m_AnchoredPosition: {x: -3, y: 1.300003}
   m_SizeDelta: {x: 0.69000244, y: 0.98999786}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1751961814
@@ -11789,6 +11795,7 @@ MonoBehaviour:
   itemName: Knife
   itemType: 0
   picture: {fileID: 21300000, guid: cfd12f5e3db74d848a87ce74644fef90, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: cfd12f5e3db74d848a87ce74644fef90, type: 3}
   rareness: 3
   itemWeight: 2
   itemStackLimit: 6
@@ -12436,6 +12443,7 @@ MonoBehaviour:
   itemName: Wood
   itemType: 2
   picture: {fileID: 21300000, guid: 52804c9df423fc447a69d57f600b0fe1, type: 3}
+  anySizeInventorypicture: {fileID: 21300000, guid: 0da0ff2ecfc412d498340dd4417d6975, type: 3}
   rareness: 1
   itemWeight: 3
   itemStackLimit: 10

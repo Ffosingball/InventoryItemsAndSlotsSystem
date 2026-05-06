@@ -1,9 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.Rendering;
 using System;
-using UnityEditor.Experimental.GraphView;
-using Unity.Mathematics;
 
 
 //This component represent the inventory itself, it has a list of slots which
@@ -181,6 +178,26 @@ public class InventoryComponent : MonoBehaviour
 
 
 
+    private Func<ItemStack, ItemComponent, int, int, bool> getCheckFunction()
+    {
+        if(inventoryConfiguration.inventoryType == InventoryType.Rectangular)
+        {
+            return (slot, item, x, y) =>
+            {
+                return slot!=null;
+            };
+        }
+        else
+        {
+            return (slot, item, x, y) =>
+            {
+                return slot!=null && item.getCellsOccupiedArray()[x+(y*item.getItemSize().x)];
+            };
+        }
+    }
+
+
+
     //This method checks if there are enough space for the itemStack to be placed
     //It only used when Rectangular and AnySize inventory types selected
     public bool IsEnoughSpaceForItem(ItemStack itemStackToPlace, Vector2Int slotPosition)
@@ -188,13 +205,21 @@ public class InventoryComponent : MonoBehaviour
         return IsEnoughSpaceForItem(itemStackToPlace.getItem(), slotPosition);
     }
 
-
-
     //This method checks if there are enough space for the itemStack to be placed
     //It only used when Rectangular and AnySize inventory types selected
     public bool IsEnoughSpaceForItem(ItemComponent itemToPlace, Vector2Int slotPosition)
     {
-        if(isInventoryInfinite && itemsPositions[slotPosition.x+(slotPosition.y*inventoryWidth)]==null)
+        return IsEnoughSpaceForItem(itemToPlace, slotPosition, itemsPositions, new Vector2Int(inventoryWidth, inventoryHeight));
+    }
+
+    //This method checks if there are enough space for the itemStack to be placed
+    //in a provided list
+    //It only used when Rectangular and AnySize inventory types selected
+    private bool IsEnoughSpaceForItem(ItemComponent itemToPlace, Vector2Int slotPosition, List<ItemStack> listOfStacks, Vector2Int listDimensions)
+    {
+        Func<ItemStack, ItemComponent, int, int, bool> check = getCheckFunction();
+
+        if(isInventoryInfinite && listOfStacks[slotPosition.x+(slotPosition.y*listDimensions.x)]==null)
         {
             return true;
         }
@@ -204,37 +229,9 @@ public class InventoryComponent : MonoBehaviour
             {
                 for(int x=0; x<itemToPlace.getItemSize().x; x++)
                 {
-                    if(slotPosition.x+x>=inventoryWidth || slotPosition.y+y>=inventoryHeight)
-                        return false;
-                    else if(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)]!=null)
-                        return false;
-                }
-            }
-
-            return true;
-        }
-    }
-
-
-
-    //This method checks if there are enough space for the itemStack to be placed
-    //in a provided list
-    //It only used when Rectangular and AnySize inventory types selected
-    private bool IsEnoughSpaceForItem(ItemStack itemStackToPlace, Vector2Int slotPosition, List<ItemStack> listOfStacks, Vector2Int listDimensions)
-    {
-        if(isInventoryInfinite && listOfStacks[slotPosition.x+(slotPosition.y*listDimensions.x)]==null)
-        {
-            return true;
-        }
-        else
-        {
-            for(int y=0; y<itemStackToPlace.getItem().getItemSize().y; y++)
-            {
-                for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
-                {
                     if(slotPosition.x+x>=listDimensions.x || slotPosition.y+y>=listDimensions.y)
                         return false;
-                    else if(listOfStacks[slotPosition.x+x+((slotPosition.y+y)*listDimensions.x)]!=null)
+                    else if(check(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)], itemToPlace, x, y))
                         return false;
                 }
             }
@@ -247,6 +244,8 @@ public class InventoryComponent : MonoBehaviour
 
     private bool IsEnoughSpaceForItemInfiniteOnly(ItemStack itemStackToPlace, Vector2Int slotPosition)
     {
+        Func<ItemStack, ItemComponent, int, int, bool> check = getCheckFunction();
+
         for(int y=0; y<itemStackToPlace.getItem().getItemSize().y; y++)
         {
             for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
@@ -255,7 +254,7 @@ public class InventoryComponent : MonoBehaviour
                     return false;
                 else if(slotPosition.y+y>=inventoryHeight)
                     return true;
-                else if(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)]!=null)
+                else if(check(itemsPositions[slotPosition.x+x+((slotPosition.y+y)*inventoryWidth)], itemStackToPlace.getItem(), x, y))
                     return false;
             }
         }
@@ -304,6 +303,23 @@ public class InventoryComponent : MonoBehaviour
             }
             isInventoryInfinite=true;
         }
+
+        Action<ItemStack, int, int, int> setItem;
+        if(inventoryConfiguration.inventoryType == InventoryType.Rectangular)
+        {
+            setItem = (itemStack, position, x, y) =>
+            {
+                itemsPositions[position+x+(y*inventoryWidth)]=itemStack;
+            };
+        }
+        else
+        {
+            setItem = (itemStack, position, x, y) =>
+            {
+                if(itemStack.getItem().getCellsOccupiedArray()[x+(y*itemStack.getItem().getItemSize().x)])
+                    itemsPositions[position+x+(y*inventoryWidth)]=itemStack;
+            };
+        }
         
         //Debug.Log("Placing!");
         itemStackToPlace.setCellOccupied(slotPosition);
@@ -317,13 +333,10 @@ public class InventoryComponent : MonoBehaviour
                     itemsPositions.Add(null);
                 }
             }
-            //else
-            //   Debug.Log("Failed: "+(slotPosition+(y*inventoryWidth))+"; size: "+itemsPositions.Count);
 
             for(int x=0; x<itemStackToPlace.getItem().getItemSize().x; x++)
             {
-                //Debug.Log("Counter: "+(slotPosition+x+(y*inventoryWidth))+"; size: "+itemsPositions.Count);
-                itemsPositions[slotPosition+x+(y*inventoryWidth)]=itemStackToPlace;
+                setItem(itemStackToPlace, slotPosition, x, y);
             }
         }
     }
@@ -337,7 +350,6 @@ public class InventoryComponent : MonoBehaviour
     {
         int initPositionToClear = itemsPositions[slotPosition].getCellOccupied();
         ItemComponent itemToRemove = itemsPositions[slotPosition].getItem();
-        //Debug.Log("Position: "+initPositionToClear+"; dimensions: "+inventoryDimensions+"; itemsPos.Count: "+itemsPositions.Count);
 
         for(int y=0; y<itemToRemove.getItemSize().y; y++)
         {
@@ -351,6 +363,28 @@ public class InventoryComponent : MonoBehaviour
     private void RemoveItemsBlockByPosition(int slotPosition)
     {
         RemoveItemsBlockByPosition(slotPosition, new Vector2Int(inventoryWidth, inventoryHeight));
+    }
+
+
+
+    private void RemoveItemsOfAnySize(int slotPosition, ItemComponent itemComponent, Vector2Int inventoryDimensions)
+    {
+        int initPositionToClear = itemsPositions[slotPosition].getCellOccupied();
+        ItemComponent itemToRemove = itemsPositions[slotPosition].getItem();
+
+        for(int y=0; y<itemToRemove.getItemSize().y; y++)
+        {
+            for(int x=0; x<itemToRemove.getItemSize().x; x++)
+            {
+                if(itemComponent.getCellsOccupiedArray()[x+(y*itemComponent.getItemSize().x)])
+                    itemsPositions[initPositionToClear+x+(y*inventoryDimensions.x)]=null;
+            }
+        }
+    }
+
+    private void RemoveItemsOfAnySize(int slotPosition, ItemComponent itemComponent)
+    {
+        RemoveItemsOfAnySize(slotPosition, itemComponent, new Vector2Int(inventoryWidth, inventoryHeight));
     }
 
 
@@ -415,11 +449,19 @@ public class InventoryComponent : MonoBehaviour
                 }
 
                 //If empty slot not found, then replace item at which mouse is over
-                if(!foundEmptySpace)
+                if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
                 {
-                    position.x = sortedPositions[arrPosition].getCellOccupied()%inventoryWidth;
-                    position.y = sortedPositions[arrPosition].getCellOccupied()/inventoryWidth;
-                    arrPosition = position.y*inventoryWidth+position.x;
+                    if(!foundEmptySpace)
+                    {
+                        position.x = sortedPositions[arrPosition].getCellOccupied()%inventoryWidth;
+                        position.y = sortedPositions[arrPosition].getCellOccupied()/inventoryWidth;
+                        arrPosition = position.y*inventoryWidth+position.x;
+                    }
+                }
+                else
+                {
+                    placementResult.stackReplaced = itemStack;
+                    return placementResult;
                 }
             }
 
@@ -847,8 +889,10 @@ public class InventoryComponent : MonoBehaviour
                     }
                     if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
                         itemsPositions[arrPosition] = null;
-                    else
+                    else if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
                         RemoveItemsBlockByPosition(arrPosition);
+                    else
+                        RemoveItemsOfAnySize(arrPosition, item);
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].Remove(newItemStack);
                 }
                 else
@@ -1020,8 +1064,10 @@ public class InventoryComponent : MonoBehaviour
                     totalItemsWeight-=itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied()].getTotalWeight();
                     if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
                         itemsPositions[itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied()]=null;
-                    else
+                    else if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
                         RemoveItemsBlockByPosition(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied());
+                    else
+                        RemoveItemsOfAnySize(itemsInTheInventory[(item.getItemName(),item.getRareness())][0].getCellOccupied(), item);
                     itemsInTheInventory[(item.getItemName(),item.getRareness())].RemoveAt(0);
                     totalItems--;
                 }
@@ -1144,8 +1190,10 @@ public class InventoryComponent : MonoBehaviour
                 totalItemsWeight-=itemsPositions[stackToRemove.getCellOccupied()].getTotalWeight();
                 if(inventoryConfiguration.inventoryType==InventoryType.SingleCelled)
                     itemsPositions[stackToRemove.getCellOccupied()]=null;
-                else
+                else if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
                     RemoveItemsBlockByPosition(stackToRemove.getCellOccupied());
+                else
+                    RemoveItemsOfAnySize(stackToRemove.getCellOccupied(), stackToRemove.getItem());
                 itemsInTheInventory[(stackToRemove.getItem().getItemName(),stackToRemove.getItem().getRareness())].Remove(stackToRemove);
                 totalItems--;
 
@@ -1313,7 +1361,7 @@ public class InventoryComponent : MonoBehaviour
                             }
                             else
                             {
-                                if(IsEnoughSpaceForItem(itemsPositions[j], new Vector2Int(j%previousWidth, j/previousWidth), resizedItemsPositions, new Vector2Int(inventoryWidth, inventoryHeight)))
+                                if(IsEnoughSpaceForItem(itemsPositions[j].getItem(), new Vector2Int(j%previousWidth, j/previousWidth), resizedItemsPositions, new Vector2Int(inventoryWidth, inventoryHeight)))
                                 {
                                     itemStacksWhichWillStay.Add(itemsPositions[j]);
                                     resizedItemsPositions[newListPosition+(j%previousWidth)] = itemsPositions[j];
@@ -1329,7 +1377,11 @@ public class InventoryComponent : MonoBehaviour
                                         itemsInTheInventory.Remove((itemsPositions[j].getItem().getItemName(),itemsPositions[j].getItem().getRareness()));
                                     
                                     itemsPositions[j].setCellOccupied(j);
-                                    RemoveItemsBlockByPosition(j, new Vector2Int(previousWidth, previousHeight));
+
+                                    if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
+                                        RemoveItemsBlockByPosition(j, new Vector2Int(previousWidth, previousHeight));
+                                    else
+                                        RemoveItemsOfAnySize(itemsPositions[j].getCellOccupied(), itemsPositions[j].getItem() ,new Vector2Int(previousWidth, previousHeight));
                                 }
                             }
                         }

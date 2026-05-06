@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
+using System;
 
 
 //This component has to be placed at the scrollView ui gameObject!!
@@ -312,6 +312,27 @@ public class InventoryViewComponent : MonoBehaviour
 
 
 
+    private void SelectAnySizeItemOutline(int firstPosition, ItemComponent itemComponent, Color selectColor)
+    {
+        for(int x=0; x<itemComponent.getItemSize().x; x++)
+        {
+            for(int y=0; y<itemComponent.getItemSize().y; y++)
+            {
+                if(itemComponent.getCellsOccupiedArray()[x+(y*itemComponent.getItemSize().x)])
+                {
+                    SetSlotOutline(new Vector2Int(firstPosition%inventoryComponent.getInventoryWidth(), firstPosition/inventoryComponent.getInventoryWidth()), selectColor, inventoryConfiguration.selectionOutlineThikness);
+                    slotsSelected.Add(firstPosition.ToString());
+                }
+                firstPosition++;
+            }
+
+            firstPosition-=itemComponent.getItemSize().x;
+            firstPosition+=inventoryComponent.getInventoryWidth();
+        }
+    }
+
+
+
     //This method makes slot at the provided position selected!
     //If you want another type of selection you can change it here!
     //But after do not forget to change Deselect as well!
@@ -338,15 +359,57 @@ public class InventoryViewComponent : MonoBehaviour
                     }
                     else
                     {
-                        int firstPosition = inventoryComponent.GetItemStackByPosition(position).getCellOccupied();
-                        SetSlotOutline(content.transform.Find(firstPosition+"icon").gameObject, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
-                        selectedSlotPosition = new Vector2Int(firstPosition%inventoryComponent.getInventoryWidth(), firstPosition/inventoryComponent.getInventoryWidth());
+                        if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
+                        {
+                            int firstPosition = inventoryComponent.GetItemStackByPosition(position).getCellOccupied();
+                            SetSlotOutline(content.transform.Find(firstPosition+"icon").gameObject, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
+                            selectedSlotPosition = new Vector2Int(firstPosition%inventoryComponent.getInventoryWidth(), firstPosition/inventoryComponent.getInventoryWidth());
+                        }
+                        else
+                        {
+                            SelectAnySizeItemOutline(inventoryComponent.GetItemStackByPosition(position).getCellOccupied(), inventoryComponent.GetItemStackByPosition(position).getItem(), inventoryConfiguration.selectionOutlineColor);
+                        }
                     }
                 }
                 else
                 {
                     selectedSlotPosition = position;
                     ItemComponent item = inventoryManager.getPickedByMouseItemStack().getItem();
+                    
+                    Action<Vector2Int, int, int> selectFunction;
+                    if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
+                    {
+                        selectFunction = (pos, x, y) =>
+                        {
+                            if(inventoryComponent.GetItemStackByPosition(pos)==null)
+                            {
+                                SetSlotOutline(pos, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
+                                slotsSelected.Add((pos.x+pos.y*inventoryComponent.getInventoryWidth()).ToString());
+                            }
+                            else
+                            {
+                                SelectAnySizeItemOutline(inventoryComponent.GetItemStackByPosition(pos).getCellOccupied(), inventoryComponent.GetItemStackByPosition(pos).getItem(), inventoryConfiguration.selectionOutlineColor);
+                            }
+                        };
+                    }
+                    else
+                    {
+                        selectFunction = (pos, x, y) =>
+                        {
+                            if(inventoryComponent.GetItemStackByPosition(pos)==null && inventoryManager.getPickedByMouseItemStack().getItem().getCellsOccupiedArray()[x+(y*inventoryManager.getPickedByMouseItemStack().getItem().getItemSize().x)])
+                            {
+                                SetSlotOutline(pos, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
+                                slotsSelected.Add((pos.x+pos.y*inventoryComponent.getInventoryWidth()).ToString());
+                            }
+                            else if(inventoryManager.getPickedByMouseItemStack().getItem().getCellsOccupiedArray()[x+(y*inventoryManager.getPickedByMouseItemStack().getItem().getItemSize().x)])
+                            {
+                                int firstPosition = inventoryComponent.GetItemStackByPosition(pos).getCellOccupied();
+                                SetSlotOutline(content.transform.Find(firstPosition+"icon").gameObject, inventoryConfiguration.wrongSelectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
+                                slotsSelected.Add(firstPosition+"icon");
+                            }
+                        };
+                    }
+                    
                     for(int y=0; y<item.getItemSize().y; y++)
                     {
                         for(int x=0; x<item.getItemSize().x; x++)
@@ -356,16 +419,9 @@ public class InventoryViewComponent : MonoBehaviour
                                 position.x++;
                                 continue;
                             }
-                            else if(inventoryComponent.GetItemStackByPosition(position)==null)
-                            {
-                                SetSlotOutline(position, inventoryConfiguration.selectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
-                                slotsSelected.Add((position.x+position.y*inventoryComponent.getInventoryWidth()).ToString());
-                            }
                             else
                             {
-                                int firstPosition = inventoryComponent.GetItemStackByPosition(position).getCellOccupied();
-                                SetSlotOutline(content.transform.Find(firstPosition+"icon").gameObject, inventoryConfiguration.wrongSelectionOutlineColor, inventoryConfiguration.selectionOutlineThikness);
-                                slotsSelected.Add(firstPosition+"icon");
+                                selectFunction(position, x, y);
                             }
 
                             position.x++;
@@ -541,6 +597,7 @@ public class InventoryViewComponent : MonoBehaviour
             else
                 itemStacks = inventoryComponent.getItemsInTheInventory();
 
+            List<ItemStack> itemBigPictureUpdated = new List<ItemStack>();
             //Update every slot
             for(int i=0; i<itemStacks.Count; i++)
             {
@@ -560,8 +617,9 @@ public class InventoryViewComponent : MonoBehaviour
                     }
                     else
                     {
-                        if(itemStacks[i].getCellOccupied()==i)
+                        if(itemStacks[i].getCellOccupied()==i  || (inventoryConfiguration.inventoryType==InventoryType.AnySize && itemBigPictureUpdated.Contains(itemStacks[i])))
                         {
+                            itemBigPictureUpdated.Add(itemStacks[i]);
                             GameObject iconSlot;
                             if(content.transform.Find(i+"icon")==null)
                             {
@@ -586,13 +644,25 @@ public class InventoryViewComponent : MonoBehaviour
                             size.y = (itemStacks[i].getItem().getItemSize().y*inventoryConfiguration.slotSizePercentage*Screen.width)+((itemStacks[i].getItem().getItemSize().y-1)*inventoryConfiguration.marginBetweenSlots*Screen.width);
                             iconSlotTransform.sizeDelta = size;
 
-                            IndicateItemRareness(null, iconSlot.GetComponent<Image>(), itemStacks[i].getItem().getRareness());
-                            Color color = iconSlot.GetComponent<Image>().color;
-                            color.a = inventoryConfiguration.alphaValueForMultiCelledSlots;
-                            iconSlot.GetComponent<Image>().color = color;
+                            if(inventoryConfiguration.inventoryType==InventoryType.Rectangular)
+                            {
+                                IndicateItemRareness(null, iconSlot.GetComponent<Image>(), itemStacks[i].getItem().getRareness());
+                                Color color = iconSlot.GetComponent<Image>().color;
+                                color.a = inventoryConfiguration.alphaValueForMultiCelledSlots;
+                                iconSlot.GetComponent<Image>().color = color;
 
-                            iconSlot.transform.Find("ItemImage").gameObject.GetComponent<Image>().sprite = itemStacks[i].getItem().getPicture();
-                            iconSlot.transform.Find("ItemText").gameObject.GetComponent<TMP_Text>().text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 || inventoryComponent.getOnlyOneItemPerStack() ? "" : itemStacks[i].getNumOfItems().ToString();
+                                iconSlot.transform.Find("ItemImage").gameObject.GetComponent<Image>().sprite = itemStacks[i].getItem().getPicture();
+                                iconSlot.transform.Find("ItemText").gameObject.GetComponent<TMP_Text>().text = itemStacks[i].getItem().getMaxNumberOfBlocksInAStack()==1 || inventoryComponent.getOnlyOneItemPerStack() ? "" : itemStacks[i].getNumOfItems().ToString();
+                            }
+                            else
+                            {
+                                Color color = iconSlot.GetComponent<Image>().color;
+                                color.a = 0;
+                                iconSlot.GetComponent<Image>().color = color;
+
+                                iconSlot.transform.Find("ItemImage").gameObject.GetComponent<Image>().sprite = itemStacks[i].getItem().getAnySizeInventoryPicture();
+                                iconSlot.transform.Find("ItemText").gameObject.GetComponent<TMP_Text>().text = "";
+                            }
                         }
 
                         slotImage.sprite = nothing;

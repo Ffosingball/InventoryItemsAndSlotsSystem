@@ -11,6 +11,7 @@ public class ItemComponent : MonoBehaviour
     [SerializeField] private string itemName;
     [SerializeField] private ItemType itemType;
     [SerializeField] private Sprite picture;
+    [SerializeField] private Sprite anySizeInventorypicture;
 
     [Header("Change only if 5 tier rareness is enabled")]
     [SerializeField] private Rareness rareness = Rareness.None;
@@ -99,6 +100,16 @@ public class ItemComponent : MonoBehaviour
         this.picture = picture;
     }
 
+    public Sprite getAnySizeInventoryPicture()
+    {
+        return anySizeInventorypicture;
+    }
+
+    public void setAnySizeInventoryPicture(Sprite picture)
+    {
+       anySizeInventorypicture = picture;
+    }
+
     public Vector2Int getItemSize()
     {
         return itemSize;
@@ -129,7 +140,6 @@ public class ItemComponent : MonoBehaviour
         }
     }
 
-    //If array is null then all cells will be occupied
     public bool[] getCellsOccupiedArray()
     {
         return itemCellsOccupied;
@@ -193,6 +203,15 @@ public class ItemComponent : MonoBehaviour
                     if(done)
                         break;
                 }
+            }
+        }
+
+        if(itemCellsOccupied==null)
+        {
+            itemCellsOccupied = new bool[itemSize.x*itemSize.y];
+            for(int i=0; i<itemSize.x*itemSize.y; i++)
+            {
+                itemCellsOccupied[i] = true;
             }
         }
     }
